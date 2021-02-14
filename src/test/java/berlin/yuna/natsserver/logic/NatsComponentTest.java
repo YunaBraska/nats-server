@@ -142,6 +142,14 @@ class NatsComponentTest {
     }
 
     @Test
+    @DisplayName("Start multiple times")
+    void natsServer_multipleTimes_shouldBeOkay() throws IOException {
+        new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
+        new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
+        new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
+    }
+
+    @Test
     @DisplayName("Config port with NULL [FAIL]")
     void natsServer_withNullablePortValue_shouldThrowMissingFormatArgumentException() {
         Nats nats = new Nats(4243).source(natsSource);
