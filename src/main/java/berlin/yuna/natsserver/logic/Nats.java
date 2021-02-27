@@ -6,6 +6,8 @@ import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsConfig;
 import berlin.yuna.natsserver.config.NatsSourceConfig;
 import berlin.yuna.natsserver.model.exception.NatsDownloadException;
+import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
+import berlin.yuna.natsserver.model.exception.NatsStartException;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -16,6 +18,7 @@ import java.net.ConnectException;
 import java.net.PortUnreachableException;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,14 +26,12 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingFormatArgumentException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.WINDOWS;
 import static berlin.yuna.clu.logic.SystemUtil.getOsType;
-import static berlin.yuna.clu.logic.SystemUtil.killProcessByName;
+import static berlin.yuna.natsserver.config.NatsConfig.PID;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.SIGNAL;
 import static java.nio.channels.Channels.newChannel;
@@ -63,7 +64,6 @@ public class Nats {
     protected static final Logger LOG = getLogger(Nats.class);
     protected static final OperatingSystem OPERATING_SYSTEM = getOsType();
     protected static final String TMP_DIR = System.getProperty("java.io.tmpdir");
-    protected static final Pattern PATTERN_PID = Pattern.compile("\\[(?<pid>\\d+)?\\]");
 
     private Process process;
     private String source = NatsSourceConfig.valueOf(getOsType().toString().replace("UNKNOWN", "DEFAULT")).getDefaultValue();
@@ -83,17 +83,17 @@ public class Nats {
      */
     public Nats(int port) {
         this();
-        config.put(PORT, String.valueOf(port < 1 ? getNextFreePort() : port));
+        port(port);
     }
 
     /**
-     * Create custom {@link Nats} with simplest configuration {@link Nats#setConfig(String...)}
+     * Create custom {@link Nats} with simplest configuration {@link Nats#config(String...)}
      *
      * @param config passes the original parameters to the server. example: port:4222, user:admin, password:admin
      */
     public Nats(final String... config) {
         this();
-        this.setConfig(config);
+        this.config(config);
     }
 
     /**
@@ -101,16 +101,17 @@ public class Nats {
      *
      * @return the {@link Nats} configuration
      */
-    public Map<NatsConfig, String> getConfig() {
+    public Map<NatsConfig, String> config() {
         return config;
     }
 
     /**
-     * Sets a single condig value
+     * Sets a single config value
      *
      * @return the {@link Nats} configuration
      */
     public Nats config(final NatsConfig key, final String value) {
+        config.remove(key, value);
         config.put(key, value);
         return this;
     }
@@ -120,10 +121,10 @@ public class Nats {
      *
      * @param config passes the original parameters to the server.
      * @return {@link Nats}
-     * @see Nats#setConfig(String...)
+     * @see Nats#config(String...)
      * @see NatsConfig
      */
-    public Nats setConfig(final Map<NatsConfig, String> config) {
+    public Nats config(final Map<NatsConfig, String> config) {
         this.config = config;
         return this;
     }
@@ -135,25 +136,20 @@ public class Nats {
      * @return {@link Nats}
      * @see NatsConfig
      */
-    public Nats setConfig(final String... config) {
+    public Nats config(final String... config) {
         for (String property : config) {
             String[] pair = property.split(":");
             if (isEmpty(property) || pair.length != 2) {
                 LOG.error("Could not parse property [{}] pair length [{}]", property, pair.length);
                 continue;
             }
-            this.config.put(NatsConfig.valueOf(pair[0].toUpperCase().replace("-", "")), pair[1]);
+            config(NatsConfig.valueOf(pair[0].toUpperCase().replace("-", "")), pair[1]);
         }
         return this;
     }
 
-    private boolean isEmpty(String property) {
-        return property == null || property.trim().length() <= 0;
-    }
-
-
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#config(String...)}
      * Throws all exceptions as {@link RuntimeException}
      *
      * @return {@link Nats}
@@ -163,7 +159,7 @@ public class Nats {
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#config(String...)}
      * Throws all exceptions as {@link RuntimeException}
      *
      * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
@@ -174,12 +170,12 @@ public class Nats {
             start(timeoutMs);
             return this;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new NatsStartException(e);
         }
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#config(String...)}
      *
      * @return {@link Nats}
      * @throws IOException              if {@link Nats} is not found or unsupported on the {@link OperatingSystem}
@@ -191,7 +187,7 @@ public class Nats {
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#config(String...)}
      *
      * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
      * @return {@link Nats}
@@ -231,8 +227,7 @@ public class Nats {
                     + "\n" + terminal.consoleError());
         }
 
-        setPid(terminal);
-        LOG.info("Starting [{}] port [{}] version [{}] pid [{}]", name, port(), OPERATING_SYSTEM, pid);
+        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OPERATING_SYSTEM, readPid());
         return this;
     }
 
@@ -266,15 +261,12 @@ public class Nats {
             process.destroy();
             process.waitFor();
         } catch (NullPointerException | InterruptedException ignored) {
-            final String processName = getNatsServerPath(OPERATING_SYSTEM).getFileName().toString();
             LOG.warn("Could not find process to stop [{}]", name);
-            LOG.warn("Terminate by name [{}]", processName);
-            killProcessByName(processName);
         } finally {
             waitForPort(port(), timeoutMs, true);
             LOG.info("Stopped [{}]", name);
         }
-        return this;
+        return tryDeleteFile(pidFile());
     }
 
     /**
@@ -299,7 +291,7 @@ public class Nats {
      * @throws RuntimeException with {@link ConnectException} when there is no port configured
      */
     public Nats port(int port) {
-        config.put(PORT, String.valueOf(port < 1 ? getNextFreePort() : port));
+        config(PORT, String.valueOf(port < 1 ? getNextFreePort() : port));
         return this;
     }
 
@@ -321,8 +313,29 @@ public class Nats {
         return source;
     }
 
-    public int getPid() {
+    /**
+     * get process id
+     *
+     * @return process id from nats server
+     */
+    public int pid() {
         return pid;
+    }
+
+    public Path pidFile() {
+        return Paths.get(config.computeIfAbsent(
+                PID,
+                value -> Paths.get(TMP_DIR, name.toLowerCase(), port() + ".pid").toString())
+        );
+    }
+
+    /**
+     * Gets Nats server path
+     *
+     * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OPERATING_SYSTEM}/{SIMPLE_CLASS_NAME}
+     */
+    public Path natsPath() {
+        return getNatsServerPath(OPERATING_SYSTEM);
     }
 
     /**
@@ -337,11 +350,25 @@ public class Nats {
         return downloadNats(targetPath);
     }
 
-    private void setPid(Terminal terminal) {
-        final Matcher matcher = PATTERN_PID.matcher(terminal.consoleInfo());
-        if (matcher.find()) {
-            pid = Integer.parseInt(matcher.group("pid"));
+    private boolean isEmpty(String property) {
+        return property == null || property.trim().length() <= 0;
+    }
+
+    private Nats tryDeleteFile(final Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException ignored) {
         }
+        return this;
+    }
+
+    private int readPid() {
+        try {
+            pid = Integer.parseInt(String.join(" ", Files.readAllLines(pidFile(), StandardCharsets.UTF_8)).trim());
+        } catch (IOException e) {
+            throw new NatsFileReaderException("Unable to read PID file [" + pidFile() + "]", e);
+        }
+        return pid;
     }
 
     private Path downloadNats(final String targetPath) {
@@ -361,14 +388,15 @@ public class Nats {
         return tmpPath;
     }
 
-    private void createParents(final Path tmpPath) {
+    private Nats createParents(final Path tmpPath) {
         try {
             Files.createDirectories(tmpPath.getParent());
         } catch (IOException ignored) {
         }
+        return this;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "java:S899"})
     private Path setExecutable(final Path path) {
         path.toFile().setExecutable(true);
         return path;
@@ -379,7 +407,7 @@ public class Nats {
             ZipEntry max = zipFile.stream().max(comparingLong(ZipEntry::getSize))
                     .orElseThrow(() -> new IllegalStateException("File not found " + zipFile));
             Files.copy(zipFile.getInputStream(max), target.toPath());
-            Files.delete(source.toPath());
+            tryDeleteFile(source.toPath());
             return target.toPath();
         }
     }
@@ -396,7 +424,7 @@ public class Nats {
         return timeoutMs <= 0;
     }
 
-    private static boolean isPortAvailable(int port) {
+    private static boolean isPortAvailable(final int port) {
         try {
             new Socket("localhost", port).close();
             return false;
@@ -405,10 +433,11 @@ public class Nats {
         }
     }
 
-    private String prepareCommand(Path natsServerPath) {
+    private String prepareCommand(final Path natsServerPath) {
         StringBuilder command = new StringBuilder();
         command.append(natsServerPath.toString());
-        for (Entry<NatsConfig, String> entry : getConfig().entrySet()) {
+        pidFile();
+        for (Entry<NatsConfig, String> entry : config().entrySet()) {
             String key = entry.getKey().getKey();
 
             if (isEmpty(entry.getValue())) {

@@ -1,6 +1,6 @@
 package berlin.yuna.natsserver.config;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public enum NatsSourceConfig {
 
 
