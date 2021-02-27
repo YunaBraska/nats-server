@@ -11,6 +11,7 @@ import java.net.BindException;
 import java.net.ConnectException;
 import java.net.PortUnreachableException;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.MissingFormatArgumentException;
@@ -73,28 +74,28 @@ class NatsComponentTest {
     @DisplayName("Setup config")
     void natsServer_configureConfig_shouldNotOverwriteOldConfig() {
         Nats nats = new Nats(4240).source(natsSource);
-        nats.setConfig("user:adminUser", "PAss:adminPw");
+        nats.config("user:adminUser", "PAss:adminPw");
 
-        assertThat(nats.getConfig().get(USER), is(equalTo("adminUser")));
-        assertThat(nats.getConfig().get(PASS), is(equalTo("adminPw")));
+        assertThat(nats.config().get(USER), is(equalTo("adminUser")));
+        assertThat(nats.config().get(PASS), is(equalTo("adminPw")));
 
-        nats.setConfig("user:newUser");
-        assertThat(nats.getConfig().get(USER), is(equalTo("newUser")));
-        assertThat(nats.getConfig().get(PASS), is("adminPw"));
+        nats.config("user:newUser");
+        assertThat(nats.config().get(USER), is(equalTo("newUser")));
+        assertThat(nats.config().get(PASS), is("adminPw"));
 
         Map<NatsConfig, String> newConfig = new HashMap<>();
         newConfig.put(USER, "oldUser");
-        nats.setConfig(newConfig);
-        assertThat(nats.getConfig().get(USER), is(equalTo("oldUser")));
+        nats.config(newConfig);
+        assertThat(nats.config().get(USER), is(equalTo("oldUser")));
     }
 
     @Test
     @DisplayName("Unknown config is ignored")
     void natsServer_invalidConfig_shouldNotRunIntroException() {
         Nats nats = new Nats(4244).source(natsSource);
-        nats.setConfig("user:adminUser:password", " ", "auth:isValid", "");
-        assertThat(nats.getConfig().size(), is(3));
-        assertThat(nats.getConfig().get(AUTH), is(equalTo("isValid")));
+        nats.config("user:adminUser:password", " ", "auth:isValid", "");
+        assertThat(nats.config().size(), is(3));
+        assertThat(nats.config().get(AUTH), is(equalTo("isValid")));
     }
 
     @Test
@@ -144,16 +145,33 @@ class NatsComponentTest {
     @Test
     @DisplayName("Start multiple times")
     void natsServer_multipleTimes_shouldBeOkay() throws IOException {
-        new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
-        new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
-        new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
+        int pid1 = new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10)).pid();
+        int pid2 = new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10)).pid();
+        int pid3 = new Nats(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10)).pid();
+        assertThat(pid1, is(not(equalTo(pid2))));
+        assertThat(pid2, is(not(equalTo(pid3))));
+        assertThat(pid3, is(not(equalTo(pid1))));
+    }
+
+    @Test
+    @DisplayName("Start in parallel")
+    void natsServer_inParallel_shouldBeOkay() throws IOException {
+        Nats nats1 = new Nats(4235).source(natsSource).start();
+        Nats nats2 = new Nats(4236).source(natsSource).start();
+        assertThat(nats1.pid(), is(not(equalTo(nats2.pid()))));
+        assertThat(nats1.port(), is(not(equalTo(nats2.port()))));
+        assertThat(nats1.pidFile(), is(not(equalTo(nats2.pidFile()))));
+        assertThat(Files.exists(nats1.pidFile()), is(true));
+        assertThat(Files.exists(nats2.pidFile()), is(true));
+        nats1.stop();
+        nats2.stop();
     }
 
     @Test
     @DisplayName("Config port with NULL [FAIL]")
     void natsServer_withNullablePortValue_shouldThrowMissingFormatArgumentException() {
         Nats nats = new Nats(4243).source(natsSource);
-        nats.getConfig().put(PORT, null);
+        nats.config().put(PORT, null);
         assertThrows(
                 MissingFormatArgumentException.class,
                 nats::port,
@@ -165,7 +183,7 @@ class NatsComponentTest {
     @DisplayName("Configure with NULL value should be ignored")
     void natsServer_withNullableConfigValue_shouldNotRunIntroExceptionOrInterrupt() throws IOException {
         Nats nats = new Nats(4236).source(natsSource);
-        nats.getConfig().put(ADDR, null);
+        nats.config().put(ADDR, null);
         nats.start();
         nats.stop();
     }
@@ -214,7 +232,7 @@ class NatsComponentTest {
     @DisplayName("Configure without value param")
     void natsServer_withoutValue() throws IOException {
         Nats nats = new Nats(4242).source(natsSource);
-        nats.getConfig().put(TRACE, "true");
+        nats.config().put(TRACE, "true");
         nats.start();
         nats.stop();
     }
