@@ -3,11 +3,13 @@ package berlin.yuna.natsserver.config;
 public enum NatsConfig {
 
     // Server Options
+    NAME(null, "[STRING] Server name (default: auto)"),
     SIGNAL(null, "[STRING] [SIGNAL] Send signal to nats-server process (stop, quit, reopen)"),
     PID(null, "[STRING] File to store PID"),
     CLIENT_ADVERTISE(null, "[STRING] Client URL to advertise to other servers"),
 
     // Server Clustering Options
+    CLUSTER_NAME(null, "[STRING] Cluster Name, if not set one will be dynamically generated"),
     NO_ADVERTISE(null, "[BOOL] Advertise known cluster IPs to clients"),
     CLUSTER_ADVERTISE(null, "[STRING] Cluster URL to advertise to other servers"),
     CONNECT_RETRIES(null, "[INT] For implicit routes, number of connect retries"),
@@ -26,6 +28,10 @@ public enum NatsConfig {
     SYSLOG(null, "[/] Log to syslog or windows event log"),
     LOGTIME(null, "[/] Timestamp log entries (default: true)"),
     REMOTE_SYSLOG(null, "[STRING] Syslog server addr (udp://localhost:514)"),
+
+    //JetStream Options,
+    JETSTREAM(null, "[/] Enable JetStream functionality"),
+    STORE_DIR(null, "[STRING] Set the storage directory"),
 
     //NATS Server Authorization Options
     USER(null, "[STRING] User required for connections"),
