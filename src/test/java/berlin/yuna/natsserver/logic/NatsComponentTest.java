@@ -1,6 +1,9 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
+import berlin.yuna.natsserver.config.NatsSourceConfig;
+import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
+import berlin.yuna.natsserver.model.exception.NatsStartException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -16,9 +19,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.MissingFormatArgumentException;
 
-import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.LINUX;
-import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.WINDOWS;
-import static berlin.yuna.clu.logic.SystemUtil.getOsType;
+import static berlin.yuna.clu.logic.SystemUtil.OS;
+import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH;
+import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH_TYPE;
+import static berlin.yuna.clu.model.OsArch.ARCH_INTEL;
+import static berlin.yuna.clu.model.OsArchType.AT_64;
+import static berlin.yuna.clu.model.OsType.OS_LINUX;
+import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
 import static berlin.yuna.natsserver.config.NatsConfig.ADDR;
 import static berlin.yuna.natsserver.config.NatsConfig.AUTH;
 import static berlin.yuna.natsserver.config.NatsConfig.PASS;
@@ -31,6 +38,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
@@ -41,13 +49,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class NatsComponentTest {
 
     private String natsSource;
-    private static final String USER_DIR = System.getProperty("user.dir");
 
     @BeforeEach
     void setUp() {
-        natsSource = getOsType().equals(LINUX) ?
-                "file://" + USER_DIR + "/src/test/resources/natsserver/linux.zip" :
-                "file://" + USER_DIR + "/src/test/resources/natsserver/mac.zip";
+        natsSource = NatsSourceConfig.URL.getDefaultValue(OS, OS_ARCH, OS_ARCH_TYPE);
+        assertThat(NatsSourceConfig.URL.getDescription(), is(equalTo("[STRING] DEFAULT SOURCE URL")));
     }
 
     @Test
@@ -204,8 +210,8 @@ class NatsComponentTest {
     @DisplayName("Validate Windows path")
     void natsServerOnWindows_shouldAddExeToPath() {
         Nats nats = new Nats(4244).source(natsSource);
-        String windowsNatsServerPath = nats.getNatsServerPath(WINDOWS).toString();
-        String expectedExe = nats.name.toLowerCase() + ".exe";
+        String windowsNatsServerPath = nats.getNatsServerPath(OS_WINDOWS, ARCH_INTEL, AT_64).toString();
+        String expectedExe = nats.name.toLowerCase() + "_windows_intel64.exe";
         assertThat(windowsNatsServerPath, containsString(expectedExe));
     }
 
@@ -214,7 +220,7 @@ class NatsComponentTest {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     void natsServerWithoutSourceUrl_shouldThrowException() {
         Nats nats = new Nats(4239).source(natsSource);
-        nats.getNatsServerPath(getOsType()).toFile().delete();
+        nats.getDefaultPath().toFile().delete();
         nats.source(null);
         assertThrows(
                 RuntimeException.class,
@@ -244,5 +250,12 @@ class NatsComponentTest {
         assertThat(nats.port(), is(not((int) PORT.getDefaultValue())));
         assertThat(nats.port(), is(greaterThan((int) PORT.getDefaultValue())));
         assertThat(nats.port(), is(lessThan((int) PORT.getDefaultValue() + 501)));
+    }
+
+    @Test
+    @DisplayName("Cov dummy")
+    void covDummy() {
+        assertThat(new NatsFileReaderException("dummy", new RuntimeException()), is(notNullValue()));
+        assertThat(new NatsStartException(new RuntimeException()), is(notNullValue()));
     }
 }
