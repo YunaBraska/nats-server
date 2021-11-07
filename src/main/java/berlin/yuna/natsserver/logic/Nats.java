@@ -210,7 +210,7 @@ public class Nats {
 
         Path natsServerPath = getNatsServerPath(OS, OS_ARCH, OS_ARCH_TYPE);
         SystemUtil.setFilePermissions(natsServerPath, OWNER_EXECUTE, OTHERS_EXECUTE, OWNER_READ, OTHERS_READ, OWNER_WRITE, OTHERS_WRITE);
-        LOG.debug("Starting [{}] port [{}] version [{}]", name, port(), OS);
+        LOG.debug("Starting [{}] port [{}] version [{}]", name, port(), OS + "_" + OS_ARCH + OS_ARCH_TYPE);
 
         String command = prepareCommand(natsServerPath);
 
@@ -230,7 +230,7 @@ public class Nats {
                     + "\n" + terminal.consoleError());
         }
 
-        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OS, readPid());
+        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OS + "_" + OS_ARCH + OS_ARCH_TYPE, readPid());
         return this;
     }
 
@@ -358,7 +358,7 @@ public class Nats {
     protected Path getNatsServerPath(final OsType os, final OsArch arch, final OsArchType archType) {
         final String targetPath =
                 name + File.separator
-                        + name + "_" + os + "_" + arch + "_" + archType
+                        + name + "_" + os + "_" + arch + archType
                         + (os == OS_WINDOWS ? ".exe" : "");
         return downloadNats(targetPath.toLowerCase()
                 .replace("os_", "").replace("_at_", "").replace("_arch", ""));

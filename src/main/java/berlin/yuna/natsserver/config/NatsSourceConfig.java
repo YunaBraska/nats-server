@@ -28,16 +28,11 @@ public enum NatsSourceConfig {
     }
 
     private static String osString(final Enum<?> input, final String prefix) {
-        if (input != null && !input.toString().contains("UNKNOWN")) {
-            String result = input.toString();
-            result = result.startsWith("OS_") ? result.substring(3) : result;
-            result = result.startsWith("ARCH_") ? result.substring(5) : result;
-            result = result.startsWith("AT_") ? result.substring(3) : result;
-            result = result.replace("86", "386");
-            result = result.replace("INTEL", "");
-            result = result.replace("MAC", "darwin");
-            result = result.replace("_", "");
-            return (prefix == null ? "" : "-") + result.toLowerCase();
+        if (input != null && !input.name().contains("UNKNOWN")) {
+            return (prefix == null ? "" : "-") + input.toString().toLowerCase()
+                    .replace("86", "386")
+                    .replace("intel", "")
+                    .replace("_", "");
         }
         return "";
     }

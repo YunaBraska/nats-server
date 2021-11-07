@@ -35,7 +35,7 @@ import static berlin.yuna.clu.model.OsArchType.AT_7;
 import static berlin.yuna.clu.model.OsArchType.AT_86;
 import static berlin.yuna.clu.model.OsType.OS_FREE_BSD;
 import static berlin.yuna.clu.model.OsType.OS_LINUX;
-import static berlin.yuna.clu.model.OsType.OS_MAC;
+import static berlin.yuna.clu.model.OsType.OS_DARWIN;
 import static berlin.yuna.clu.model.OsType.OS_MIPS;
 import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -88,9 +88,9 @@ class NatsConfigComponentTest {
     @DisplayName("Download url creation test")
     void testDownloadUrl() {
         final NatsSourceConfig url = NatsSourceConfig.URL;
-        assertThat(stripURL(url.getDefaultValue(OS_MAC, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-darwin-amd64.zip")));
-        assertThat(stripURL(url.getDefaultValue(OS_MAC, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-darwin-amd64.zip")));
-        assertThat(stripURL(url.getDefaultValue(OS_MAC, ARCH_ARM, AT_64)), is(equalTo("/nats-server-version-darwin-arm64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_DARWIN, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-darwin-amd64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_DARWIN, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-darwin-amd64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_DARWIN, ARCH_ARM, AT_64)), is(equalTo("/nats-server-version-darwin-arm64.zip")));
         assertThat(stripURL(url.getDefaultValue(OS_FREE_BSD, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-freebsd-amd64.zip")));
         assertThat(stripURL(url.getDefaultValue(OS_FREE_BSD, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-freebsd-amd64.zip")));
         assertThat(stripURL(url.getDefaultValue(OS_LINUX, ARCH_INTEL, AT_86)), is(equalTo("/nats-server-version-linux-386.zip")));

@@ -56,7 +56,7 @@ original [Nats server](https://github.com/nats-io/nats-server)
 <dependency>
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-server</artifactId>
-    <version>2.1.5</version>
+    <version>2.6.1</version>
 </dependency>
 ```
 [Get latest version][central_link]
