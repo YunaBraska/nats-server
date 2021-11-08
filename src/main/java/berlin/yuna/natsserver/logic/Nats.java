@@ -128,7 +128,7 @@ public class Nats {
      * @see NatsConfig
      */
     public Nats config(final Map<NatsConfig, String> config) {
-        this.config = config;
+        this.config.putAll(config);
         return this;
     }
 
@@ -344,7 +344,7 @@ public class Nats {
     /**
      * Gets Nats server path
      *
-     * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OS}_{OS_ARCH}_{OS_ARCH_TYPE}/{SIMPLE_CLASS_NAME}
+     * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OS}_{OS_ARCH}{OS_ARCH_TYPE}/{SIMPLE_CLASS_NAME}
      */
     protected Path getDefaultPath() {
         return getNatsServerPath(OS, OS_ARCH, OS_ARCH_TYPE);
@@ -353,7 +353,7 @@ public class Nats {
     /**
      * Gets Nats server path
      *
-     * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OS}_{OS_ARCH}_{OS_ARCH_TYPE}/{SIMPLE_CLASS_NAME}
+     * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OS}_{OS_ARCH}{OS_ARCH_TYPE}/{SIMPLE_CLASS_NAME}
      */
     protected Path getNatsServerPath(final OsType os, final OsArch arch, final OsArchType archType) {
         final String targetPath =
