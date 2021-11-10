@@ -74,7 +74,7 @@ class NatsComponentTest {
         Nats nats = new Nats().config(ADDR, "localhost").port(4238).source(natsSource);
         assertThat(nats.source(), is(equalTo(natsSource)));
         nats.tryStart(SECONDS.toMillis(10));
-        nats.stop();
+        nats.close();
         assertThat(nats.toString().length(), is(greaterThan(1)));
     }
 

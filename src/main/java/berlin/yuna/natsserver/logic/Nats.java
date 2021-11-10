@@ -58,7 +58,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @since 1.0
  */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public class Nats {
+public class Nats implements AutoCloseable{
 
     /**
      * simpleName from {@link Nats} class
@@ -238,6 +238,11 @@ public class Nats {
 
         LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OS + "_" + OS_ARCH + OS_ARCH_TYPE, readPid());
         return this;
+    }
+
+    @Override
+    public void close() {
+        this.stop();
     }
 
     /**
