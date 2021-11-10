@@ -10,7 +10,6 @@ import berlin.yuna.natsserver.config.NatsSourceConfig;
 import berlin.yuna.natsserver.model.exception.NatsDownloadException;
 import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
 import berlin.yuna.natsserver.model.exception.NatsStartException;
-import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,6 +27,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingFormatArgumentException;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -38,6 +38,7 @@ import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
 import static berlin.yuna.natsserver.config.NatsConfig.PID;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.SIGNAL;
+import static java.lang.String.format;
 import static java.nio.channels.Channels.newChannel;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
@@ -47,7 +48,7 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static java.util.Comparator.comparingLong;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.slf4j.LoggerFactory.getLogger;
+import static java.util.logging.Logger.getLogger;
 
 /**
  * {@link Nats}
@@ -58,19 +59,19 @@ import static org.slf4j.LoggerFactory.getLogger;
  * @since 1.0
  */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public class Nats implements AutoCloseable{
+public class Nats implements AutoCloseable {
 
     /**
      * simpleName from {@link Nats} class
      */
     protected int pid = -1;
     protected final String name;
-    protected static final Logger LOG = getLogger(Nats.class);
+    protected static final Logger LOG = getLogger(Nats.class.getSimpleName());
     protected static final String TMP_DIR = System.getProperty("java.io.tmpdir");
 
     private Process process;
     private String source = NatsSourceConfig.URL.getDefaultValue(OS, OS_ARCH, OS_ARCH_TYPE);
-    private Map<NatsConfig, String> config = getDefaultConfig();
+    private final Map<NatsConfig, String> config = getDefaultConfig();
 
     /**
      * Create {@link Nats} without any start able configuration
@@ -120,7 +121,7 @@ public class Nats implements AutoCloseable{
                 config.put(key, value);
             }
         } else {
-                config.put(key, value);
+            config.put(key, value);
         }
         return this;
     }
@@ -149,7 +150,7 @@ public class Nats implements AutoCloseable{
         for (String property : config) {
             String[] pair = property.split(":");
             if (isEmpty(property) || pair.length != 2) {
-                LOG.error("Could not parse property [{}] pair length [{}]", property, pair.length);
+                LOG.severe(() -> format("Could not parse property [%s] pair length [%s]", property, pair.length));
                 continue;
             }
             config(NatsConfig.valueOf(pair[0].toUpperCase().replace("-", "")), pair[1]);
@@ -206,7 +207,7 @@ public class Nats implements AutoCloseable{
      */
     public Nats start(final long timeoutMs) throws IOException {
         if (process != null) {
-            LOG.error("[{}] is already running", name);
+            LOG.severe(() -> format("[%s] is already running", name));
             return this;
         }
 
@@ -216,15 +217,15 @@ public class Nats implements AutoCloseable{
 
         Path natsServerPath = getNatsServerPath(OS, OS_ARCH, OS_ARCH_TYPE);
         SystemUtil.setFilePermissions(natsServerPath, OWNER_EXECUTE, OTHERS_EXECUTE, OWNER_READ, OTHERS_READ, OWNER_WRITE, OTHERS_WRITE);
-        LOG.debug("Starting [{}] port [{}] version [{}]", name, port(), OS + "_" + OS_ARCH + OS_ARCH_TYPE);
+        LOG.fine(() -> format("Starting [%s] port [%s] version [%s]", name, port(), OS + "_" + OS_ARCH + OS_ARCH_TYPE));
 
         String command = prepareCommand(natsServerPath);
 
-        LOG.debug(command);
+        LOG.fine(() -> (command));
 
         final Terminal terminal = new Terminal()
                 .consumerInfo(LOG::info)
-                .consumerError(LOG::error)
+                .consumerError(LOG::severe)
                 .timeoutMs(timeoutMs > 0 ? timeoutMs : 10000)
                 .breakOnError(false)
                 .execute(command);
@@ -236,7 +237,7 @@ public class Nats implements AutoCloseable{
                     + "\n" + terminal.consoleError());
         }
 
-        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OS + "_" + OS_ARCH + OS_ARCH_TYPE, readPid());
+        LOG.info(() -> format("Started [%s] port [%s] version [%s] pid [%s]", name, port(), OS + "_" + OS_ARCH + OS_ARCH_TYPE, readPid()));
         return this;
     }
 
@@ -264,21 +265,22 @@ public class Nats implements AutoCloseable{
      */
     public Nats stop(final long timeoutMs) {
         try {
-            LOG.info("Stopping [{}]", name);
+            LOG.info(() -> format("Stopping [%s]", name));
             if (pid > 0) {
                 new Terminal()
                         .consumerInfo(LOG::info)
-                        .consumerError(LOG::error)
+                        .consumerError(LOG::severe)
                         .breakOnError(false)
                         .execute(getNatsServerPath(OS, OS_ARCH, OS_ARCH_TYPE).toString() + " " + SIGNAL.getKey() + " stop=" + pid);
             }
             process.destroy();
             process.waitFor();
         } catch (NullPointerException | InterruptedException ignored) {
-            LOG.warn("Could not find process to stop [{}]", name);
+            LOG.warning(() -> format("Could not find process to stop [%s]", name));
+            Thread.currentThread().interrupt();
         } finally {
             waitForPort(port(), timeoutMs, true);
-            LOG.info("Stopped [{}]", name);
+            LOG.info(() -> format("Stopped [%s]", name));
         }
         return tryDeleteFile(pidFile());
     }
@@ -383,6 +385,7 @@ public class Nats implements AutoCloseable{
         try {
             Files.deleteIfExists(path);
         } catch (IOException ignored) {
+            //ignored
         }
         return this;
     }
@@ -401,10 +404,10 @@ public class Nats implements AutoCloseable{
         if (Files.notExists(tmpPath)) {
             final File zipFile = new File(tmpPath.getParent().toFile(), tmpPath.getFileName().toString() + ".zip");
             createParents(tmpPath);
-            LOG.info("Start download natsServer from [{}] to [{}]", source, zipFile);
+            LOG.info(() -> format("Start download natsServer from [%s] to [%s]", source, zipFile));
             try (FileOutputStream fos = new FileOutputStream(zipFile)) {
                 fos.getChannel().transferFrom(newChannel(new URL(source).openStream()), 0, Long.MAX_VALUE);
-                LOG.info("Finished download natsServer unpacked to [{}]", tmpPath.toUri());
+                LOG.info(() -> format("Finished download natsServer unpacked to [%s]", tmpPath.toUri()));
                 return setExecutable(unzip(zipFile, tmpPath.toFile()));
             } catch (Exception e) {
                 throw new NatsDownloadException(e);
@@ -417,6 +420,7 @@ public class Nats implements AutoCloseable{
         try {
             Files.createDirectories(tmpPath.getParent());
         } catch (IOException ignored) {
+            //ignored
         }
         return this;
     }
@@ -466,7 +470,7 @@ public class Nats implements AutoCloseable{
             String key = entry.getKey().getKey();
 
             if (isEmpty(entry.getValue())) {
-                LOG.warn("Skipping property [{}] with value [{}]", key, entry.getValue());
+                LOG.warning(() -> format("Skipping property [%s] with value [%s]", key, entry.getValue()));
                 continue;
             }
 

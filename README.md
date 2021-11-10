@@ -23,11 +23,11 @@ original [Nats server](https://github.com/nats-io/nats-server)
 [coverage_shield]: https://img.shields.io/codeclimate/coverage/YunaBraska/nats-server?style=flat-square
 [coverage_link]: https://codeclimate.com/github/YunaBraska/nats-server/test_coverage
 [issues_shield]: https://img.shields.io/github/issues/YunaBraska/nats-server?style=flat-square
-[issues_link]: https://github.com/YunaBraska/nats-server/commits/master
+[issues_link]: https://github.com/YunaBraska/nats-server/commits/main
 [commit_shield]: https://img.shields.io/github/last-commit/YunaBraska/nats-server?style=flat-square
 [commit_link]: https://github.com/YunaBraska/nats-server/issues
 [license_shield]: https://img.shields.io/github/license/YunaBraska/nats-server?style=flat-square
-[license_link]: https://github.com/YunaBraska/nats-server/blob/master/LICENSE
+[license_link]: https://github.com/YunaBraska/nats-server/blob/main/LICENSE
 [dependency_shield]: https://img.shields.io/librariesio/github/YunaBraska/nats-server?style=flat-square
 [dependency_link]: https://libraries.io/github/YunaBraska/nats-server
 [central_shield]: https://img.shields.io/maven-central/v/berlin.yuna/nats-server?style=flat-square
@@ -82,9 +82,9 @@ original [Nats server](https://github.com/nats-io/nats-server)
 | source(customUrl)                    | Sets custom nats download url              |
 
 * All configurations are optional. (see all configs
-  here: [NatsConfig](https://github.com/YunaBraska/nats-server/blob/master/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java))
+  here: [NatsConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java))
 * Nats server default sources are described
-  here: [NatsSourceConfig](https://github.com/YunaBraska/nats-server/blob/master/src/main/java/berlin/yuna/natsserver/config/NatsSourceConfig.java)
+  here: [NatsSourceConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsSourceConfig.java)
 
 ### Example
 
