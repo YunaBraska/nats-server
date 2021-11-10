@@ -114,8 +114,14 @@ public class Nats {
      * @return the {@link Nats} configuration
      */
     public Nats config(final NatsConfig key, final String value) {
-        config.remove(key, value);
-        config.put(key, value);
+        config.remove(key);
+        if (key.getDescription().startsWith("[/]")) {
+            if (value.equals("true")) {
+                config.put(key, value);
+            }
+        } else {
+                config.put(key, value);
+        }
         return this;
     }
 

@@ -28,6 +28,7 @@ import static berlin.yuna.clu.model.OsType.OS_LINUX;
 import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
 import static berlin.yuna.natsserver.config.NatsConfig.ADDR;
 import static berlin.yuna.natsserver.config.NatsConfig.AUTH;
+import static berlin.yuna.natsserver.config.NatsConfig.JETSTREAM;
 import static berlin.yuna.natsserver.config.NatsConfig.PASS;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.TRACE;
@@ -39,6 +40,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
@@ -74,6 +76,24 @@ class NatsComponentTest {
         nats.tryStart(SECONDS.toMillis(10));
         nats.stop();
         assertThat(nats.toString().length(), is(greaterThan(1)));
+    }
+
+    @Test
+    @DisplayName("Default config JetStream")
+    void natsServer_withJetStream_shouldStartWithDefaultValues() {
+        Nats nats = new Nats().config(JETSTREAM, "true").port(4249).source(natsSource);
+        assertThat(nats.source(), is(equalTo(natsSource)));
+        nats.tryStart(SECONDS.toMillis(10));
+        nats.stop();
+        assertThat(nats.toString().length(), is(greaterThan(1)));
+    }
+
+    @Test
+    @DisplayName("Deactivate JetStream")
+    void natsServer_withJetStreamFalse_shouldNotUseJetStream() {
+        Nats nats = new Nats().config(JETSTREAM, "true");
+        nats.config(JETSTREAM, "false");
+        assertThat(nats.config().get(JETSTREAM), is(nullValue()));
     }
 
     @Test
