@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -65,7 +66,7 @@ public abstract class NatsBase implements AutoCloseable {
 
     final String name;
     final Logger logger;
-    final Map<NatsConfig, String> config = new EnumMap<>(NatsConfig.class);
+    final Map<NatsConfig, String> config = new ConcurrentHashMap<>();
     final List<String> customArgs = new ArrayList<>();
     Process process;
     private static final String TMP_DIR = "java.io.tmpdir";
