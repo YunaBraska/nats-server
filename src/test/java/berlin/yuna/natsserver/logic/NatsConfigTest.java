@@ -1,6 +1,7 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -48,12 +49,12 @@ class NatsConfigTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        Files.deleteIfExists(new Nats().binaryFile());
-        Arrays.stream(NatsConfig.values()).forEach(config -> {
-            System.clearProperty(config.name());
-            System.clearProperty(NATS_PREFIX + config.name());
-        });
-        customPropertiesFile = Objects.requireNonNull(getClass().getClassLoader().getResource("custom.properties")).getPath();
+        purge();
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        purge();
     }
 
     @Test
@@ -227,4 +228,14 @@ class NatsConfigTest {
         assertThat(nats.downloadUrl(), is(containsString(nats.config().get(NATS_SYSTEM))));
         assertThat(nats.downloadUrl(), not(containsString("null")));
     }
+
+    private void purge() throws IOException {
+        Files.deleteIfExists(new Nats().binaryFile());
+        Arrays.stream(NatsConfig.values()).forEach(config -> {
+            System.clearProperty(config.name());
+            System.clearProperty(NATS_PREFIX + config.name());
+        });
+        customPropertiesFile = Objects.requireNonNull(getClass().getClassLoader().getResource("custom.properties")).getPath();
+    }
+
 }

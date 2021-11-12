@@ -161,13 +161,6 @@ class NatsComponentTest {
     @Test
     @DisplayName("Start multiple times")
     void natsServer_multipleTimes_shouldBeOkay() throws Exception {
-        System.out.println("!!!! "
-                + "System [" + getSystem() + "]"
-                + "config file [" + nats.getValue(NATS_CONFIG_FILE) + "]"
-                + "Version [" + nats.config().get(NATS_VERSION) + "]"
-                + "Version Resolved [" + nats.getValue(NATS_VERSION) + "]"
-                + "URL [" + nats.downloadUrl() + "]"
-        );
         final Nats nats1 = new Nats(-1).start(NATS_TIMEOUT);
         final int pid1 = nats1.pid();
         nats1.stop(NATS_TIMEOUT * 2);
