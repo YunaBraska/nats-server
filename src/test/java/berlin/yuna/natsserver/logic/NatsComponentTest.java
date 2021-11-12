@@ -190,9 +190,7 @@ class NatsComponentTest {
     @Test
     @DisplayName("Configure with NULL value should be ignored")
     void natsServer_withNullableConfigValue_shouldNotRunIntroExceptionOrInterrupt() throws Exception {
-        nats.config().put(ADDR, null);
-        nats.start(NATS_TIMEOUT);
-        assertThat(nats.getValue(ADDR), is(ADDR.valueRaw()));
+        assertThrows(NullPointerException.class, () -> nats.config().put(ADDR, null));
     }
 
     @Test

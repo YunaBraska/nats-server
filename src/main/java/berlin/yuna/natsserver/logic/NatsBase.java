@@ -198,6 +198,7 @@ public abstract class NatsBase implements AutoCloseable {
     @SuppressWarnings({"ResultOfMethodCallIgnored", "java:S899"})
     Path downloadNats() throws IOException {
         final Path binaryPath = binaryFile();
+        Files.createDirectories(binaryPath.getParent());
         if (Files.notExists(binaryPath)) {
             final URL source = new URL(downloadUrl());
             unzip(download(source, Paths.get(binaryFile().toString() + ".zip")), binaryPath);
