@@ -22,10 +22,13 @@ import static berlin.yuna.natsserver.config.NatsConfig.ADDR;
 import static berlin.yuna.natsserver.config.NatsConfig.AUTH;
 import static berlin.yuna.natsserver.config.NatsConfig.DEBUG;
 import static berlin.yuna.natsserver.config.NatsConfig.JETSTREAM;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_CONFIG_FILE;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
 import static berlin.yuna.natsserver.config.NatsConfig.PASS;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.TRACE;
 import static berlin.yuna.natsserver.config.NatsConfig.USER;
+import static berlin.yuna.natsserver.logic.NatsUtils.getSystem;
 import static java.util.Objects.requireNonNull;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -40,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @DisplayName("NatsServer plain java")
 class NatsComponentTest {
 
-    private static final int NATS_TIMEOUT = 256;
+    private static final int NATS_TIMEOUT = 512;
     private Nats nats;
 
     @BeforeEach
@@ -158,6 +161,13 @@ class NatsComponentTest {
     @Test
     @DisplayName("Start multiple times")
     void natsServer_multipleTimes_shouldBeOkay() throws Exception {
+        System.out.println("!!!! "
+                + "System [" + getSystem() + "]"
+                + "config file [" + nats.getValue(NATS_CONFIG_FILE) + "]"
+                + "Version [" + nats.config().get(NATS_VERSION) + "]"
+                + "Version Resolved [" + nats.getValue(NATS_VERSION) + "]"
+                + "URL [" + nats.downloadUrl() + "]"
+        );
         final Nats nats1 = new Nats(-1).start(NATS_TIMEOUT);
         final int pid1 = nats1.pid();
         nats1.stop(NATS_TIMEOUT * 2);

@@ -51,7 +51,10 @@ public class NatsUtils {
     }
 
     public static String getSystem() {
-        return (osString(OS, null) + osString(OS_ARCH, "-") + osString(OS_ARCH_TYPE, null)).replace("mips64", "linux-mips64le");
+        return (osString(OS, null) + osString(OS_ARCH, "-") + osString(OS_ARCH_TYPE, null))
+                .replace("mips64", "linux-mips64le")
+                .replace("darwin-386", "darwin-amd64")
+                ;
     }
 
     public static Path download(final URL source, final Path target) {
