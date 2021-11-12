@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @DisplayName("NatsServer plain java")
 class NatsComponentTest {
 
-    private static final int NATS_TIMEOUT = 5000;
+    private static final int NATS_TIMEOUT = 256;
     private Nats nats;
 
     @BeforeEach

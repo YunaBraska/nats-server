@@ -82,6 +82,7 @@ class NatsConfigComponentTest {
         final Matcher matcher = Pattern.compile("\"tag_name\":\"(?<version>.*?)\"").matcher(json);
         if (matcher.find()) {
             final String version = matcher.group("version");
+            System.out.println("LATEST NATS VERSION [" + version + "]");
             String content = readFile(requireNonNull(configPath));
             content = content.replaceFirst("(?<prefix>NATS_VERSION\\(\")(.*)(?<suffix>\",\\s\")", "${prefix}" + version + "${suffix}");
             Files.write(configPath, content.getBytes());
