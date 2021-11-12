@@ -49,7 +49,7 @@ class GithubWorkflowTemplate {
                 final String key = line.trim().split("\\s")[1];
                 System.out.println("Replacing content [" + key + "] at [" + file.getFileName().toString() + "]");
                 replaceMode.set(true);
-                String variable = variables.get(key);
+                final String variable = variables.get(key);
                 if (variable != null) {
                     newContent.append(variable);
                 }
