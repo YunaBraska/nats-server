@@ -42,10 +42,11 @@ original [Nats server](https://github.com/nats-io/nats-server)
 [gitter_link]: https://gitter.im/nats-server/Lobby
 
 ### Family
-* Nats plain Java
+
+* Nats **plain Java**
   * [Nats-Server](https://github.com/YunaBraska/nats-server)
   * [Nats-Streaming-Server](https://github.com/YunaBraska/nats-streaming-server)
-* Nats for spring boot
+* Nats for **Spring Boot**
   * [Nats-Server-Embedded](https://github.com/YunaBraska/nats-server-embedded)
   * [Nats-Streaming-Server-Embedded](https://github.com/YunaBraska/nats-streaming-server-embedded)
 
@@ -54,52 +55,77 @@ original [Nats server](https://github.com/nats-io/nats-server)
 ```xml
 
 <dependency>
-    <groupId>berlin.yuna</groupId>
-    <artifactId>nats-server</artifactId>
-    <version>2.6.1</version>
+  <groupId>berlin.yuna</groupId>
+  <artifactId>nats-server</artifactId>
+  <version>2.6.5</version>
 </dependency>
 ```
+
 [Get latest version][central_link]
 
+### Configuration priority
+
+1) Custom Arguments
+2) Java config
+3) Property File (*1)
+4) Environment Variables (*1)
+5) Default Config
+
+* *1 configs must start with "NATS_" and the additional option from [NatsConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java))*
+
 ### Common methods
+
 #### Getter
-| Name                                 | Description                                |
-|--------------------------------------|--------------------------------------------|
-| port                                 | Get configured port                        |
-| pid                                  | Get process id                             |
-| config                               | Get config map                             |
-| source                               | Get download url                           |
-| pidFile                              | Get file containing the process id         |
-| natsPath                             | Get nats target path                       |
+
+| Name                                 | Description                                      |
+|--------------------------------------|--------------------------------------------------|
+| binaryFile                           | Path to binary file                              |
+| downloadUrl                          | Download URL                                     |
+| port                                 | port (-1 == not started && random port)          |
+| pid                                  | process id (-1 == not started)                   |
+| pidFile                              | Path to PID file                                 |
+| config                               | Get config map                                   |
+| getValue                             | Get resolved config for a key                    |
 
 #### Setter
-| Name                                 | Description                                |
-|--------------------------------------|--------------------------------------------|
-| port(port)                           | Sets specific port (-1 = random port)      |
-| config(key, value)                   | Set specific config value                  |
-| config(Map<key, value>)              | Set config map                             |
-| config(key:value...)                 | Set config array as string                 |
-| source(customUrl)                    | Sets custom nats download url              |
+
+| Name                                 | Description                                      |
+|--------------------------------------|--------------------------------------------------|
+| config(key, value)                   | Set specific config value                        |
+| config(Map<key, value>)              | Set config map                                   |
+| config(key, value...)                | Set config array                                 |
+
+#### Others
+
+| Name                                 | Description                                      |
+|--------------------------------------|--------------------------------------------------|
+| start                                | Starts the nats server                           |
+| start(timeout)                       | Starts the nats server with custom timeout       |
+| tryStart()                           | Starts the nats server (mode = RuntimeException) |
+| stop()                               | Stops the nats server                            |
+| stop(timeout)                        | Stops the nats server with custom timeout        |
+| config(Map<key, value>)              | Set config map                                   |
+| config(key, value...)                | Set config array                                 |
 
 * All configurations are optional. (see all configs
   here: [NatsConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java))
-* Nats server default sources are described
-  here: [NatsSourceConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsSourceConfig.java)
 
 ### Example
 
 ```java
 public class MyNatsTest {
 
-    public static void main(String[] args) {
-        final Nats nats = new Nats()
-                .source("http://myOwnCachedNatsServerVersion")
-                .port(4222)
-                .config(USER, "yuna")
-                .config(PASS, "braska");
-        nats.start();
-        nats.stop();
-    }
+  public static void main(final String[] args) {
+    final Nats nats = new Nats()
+            .source("http://myOwnCachedNatsServerVersion")
+            .port(4222) //-1 for a random port
+            .config(
+                    USER, "yuna",
+                    PASS, "braska"
+            )
+            .start();
+    nats.stop();
+  }
 }
 ```
 
