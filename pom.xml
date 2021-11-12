@@ -6,11 +6,11 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-server</artifactId>
-    <version>2.6.4</version>
+    <version>2.6.5</version>
     <packaging>jar</packaging>
 
     <name>nats-server</name>
-    <description>Nats server for testing which contains the original Nats server
+    <description>Nats server for testing which starts the original Nats server
     </description>
     <url>https://github.com/YunaBraska/nats-server</url>
 
