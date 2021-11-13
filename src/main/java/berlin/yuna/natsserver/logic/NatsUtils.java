@@ -1,7 +1,8 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
-import berlin.yuna.natsserver.model.exception.NatsDownloadException;
+import berlin.yuna.natsserver.model.MapValue;
+import berlin.yuna.natsserver.model.NatsDownloadException;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -37,7 +38,7 @@ public class NatsUtils {
                 .orElseGet(() -> Optional.ofNullable(System.getProperty(key.toUpperCase())).orElseGet(fallback));
     }
 
-    public static String resolveEnvs(final String input, final Map<NatsConfig, String> config) {
+    public static String resolveEnvs(final String input, final Map<NatsConfig, MapValue> config) {
         String result = input;
         int start;
         int end;
@@ -127,9 +128,11 @@ public class NatsUtils {
         return string == null || string.trim().length() <= 0;
     }
 
-    private static String envValue(final String key, final Map<NatsConfig, String> config) {
-        final String envValue = getEnv(key, () -> "");
-            return config.getOrDefault(NatsConfig.valueOf(key), envValue);
+    private static String envValue(final String key, final Map<NatsConfig, MapValue> config) {
+        return Optional
+                .ofNullable(config.get(NatsConfig.valueOf(key)))
+                .map(MapValue::value)
+                .orElseGet(() -> getEnv(key, () -> ""));
     }
 
     public static String removeQuotes(final String string) {

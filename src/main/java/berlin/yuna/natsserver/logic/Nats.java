@@ -3,7 +3,8 @@ package berlin.yuna.natsserver.logic;
 import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsConfig;
-import berlin.yuna.natsserver.model.exception.NatsStartException;
+import berlin.yuna.natsserver.model.MapValue;
+import berlin.yuna.natsserver.model.NatsStartException;
 
 import java.io.IOException;
 import java.net.BindException;
@@ -18,6 +19,7 @@ import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.SIGNAL;
 import static berlin.yuna.natsserver.logic.NatsUtils.validatePort;
 import static berlin.yuna.natsserver.logic.NatsUtils.waitForPort;
+import static berlin.yuna.natsserver.model.ValueSource.DSL;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -71,7 +73,7 @@ public class Nats extends NatsBase {
      *
      * @return the {@link Nats} configuration
      */
-    public Map<NatsConfig, String> config() {
+    public Map<NatsConfig, MapValue> config() {
         return config;
     }
 
@@ -84,10 +86,10 @@ public class Nats extends NatsBase {
         config.remove(key);
         if (key.desc().startsWith("[/]")) {
             if (value.equals("true")) {
-                config.put(key, value);
+                addConfig(DSL, key, value);
             }
         } else {
-            config.put(key, value);
+            addConfig(DSL, key, value);
         }
         return this;
     }
@@ -101,7 +103,7 @@ public class Nats extends NatsBase {
      * @see NatsConfig
      */
     public Nats config(final Map<NatsConfig, String> config) {
-        this.config.putAll(config);
+        config.forEach((key, value) -> addConfig(DSL, key, value));
         return this;
     }
 
