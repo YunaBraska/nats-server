@@ -1,6 +1,5 @@
 package berlin.yuna.natsserver.helper;
 
-import berlin.yuna.natsserver.logic.Nats;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 @Tag("UnitTest")
-class GithubWorkflowTemplate {
+class GithubWorkflowTemplateTest {
 
     private final Map<String, String> variables = new HashMap<>();
 

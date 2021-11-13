@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static berlin.yuna.clu.logic.SystemUtil.readFile;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
@@ -84,7 +85,7 @@ class NatsConfigComponentTest {
             final String version = matcher.group("version");
             System.out.println("LATEST NATS VERSION [" + version + "]");
             String content = readFile(requireNonNull(configPath));
-            content = content.replaceFirst("(?<prefix>NATS_VERSION\\(\")(.*)(?<suffix>\",\\s\")", "${prefix}" + version + "${suffix}");
+            content = content.replaceFirst("(?<prefix>" + NATS_VERSION + "\\(\")(.*)(?<suffix>\",\\s\")", "${prefix}" + version + "${suffix}");
             Files.write(configPath, content.getBytes());
         } else {
             throw new IllegalStateException("Could not update nats server version");
