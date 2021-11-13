@@ -57,7 +57,7 @@ class NatsConfigComponentTest {
         final Set<String> missingConfigInJava = getNotMatchingEntities(consoleConfigKeys, javaConfigKeys);
 
         final Set<String> missingConfigInConsole = getNotMatchingEntities(javaConfigKeys, consoleConfigKeys);
-        assertThat("Missing config in java \n" + console.toString(), missingConfigInJava, is(empty()));
+        assertThat("Missing config in java \n" + console, missingConfigInJava, is(empty()));
         assertThat("Config was removed by nats", missingConfigInConsole, is(empty()));
     }
 
@@ -85,7 +85,7 @@ class NatsConfigComponentTest {
             final String version = matcher.group("version");
             System.out.println("LATEST NATS VERSION [" + version + "]");
             String content = readFile(requireNonNull(configPath));
-            content = content.replaceFirst("(?<prefix>" + NATS_VERSION + "\\(\")(.*)(?<suffix>\",\\s\")", "${prefix}" + version + "${suffix}");
+            content = content.replaceFirst("(?<prefix>" + NATS_VERSION.name() + "\\(\")(.*)(?<suffix>\",\\s\")", "${prefix}" + version + "${suffix}");
             Files.write(configPath, content.getBytes());
         } else {
             throw new IllegalStateException("Could not update nats server version");

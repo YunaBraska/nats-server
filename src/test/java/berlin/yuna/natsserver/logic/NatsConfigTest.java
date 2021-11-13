@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -164,7 +165,7 @@ class NatsConfigTest {
 
         nats.downloadNats();
         assertThat(nats.binaryFile().toFile(), is(anExistingFile()));
-        assertThat(Files.readAllLines(nats.binaryFile()), is(equalTo(asList("Should not be overwritten"))));
+        assertThat(Files.readAllLines(nats.binaryFile()), is(equalTo(Collections.singletonList("Should not be overwritten"))));
     }
 
     @Test
