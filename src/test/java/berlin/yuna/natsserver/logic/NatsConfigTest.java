@@ -225,7 +225,7 @@ class NatsConfigTest {
         assertThat(nats.binaryFile().toString(), is(containsString(CUSTOM_LOG_NAME)));
         assertThat(nats.binaryFile().toString(), not(containsString("null")));
         assertThat(nats.downloadUrl(), is(containsString(CUSTOM_VERSION)));
-        assertThat(nats.downloadUrl(), is(containsString(nats.config().get(NATS_SYSTEM))));
+        assertThat(nats.downloadUrl(), is(containsString(nats.config().get(NATS_SYSTEM).value())));
         assertThat(nats.downloadUrl(), not(containsString("null")));
     }
 

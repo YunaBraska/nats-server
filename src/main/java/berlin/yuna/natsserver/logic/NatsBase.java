@@ -2,6 +2,8 @@ package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.natsserver.config.NatsConfig;
+import berlin.yuna.natsserver.model.MapValue;
+import berlin.yuna.natsserver.model.ValueSource;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -13,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +42,11 @@ import static berlin.yuna.natsserver.logic.NatsUtils.isEmpty;
 import static berlin.yuna.natsserver.logic.NatsUtils.removeQuotes;
 import static berlin.yuna.natsserver.logic.NatsUtils.resolveEnvs;
 import static berlin.yuna.natsserver.logic.NatsUtils.unzip;
+import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
+import static berlin.yuna.natsserver.model.ValueSource.DEFAULT;
+import static berlin.yuna.natsserver.model.ValueSource.DSL;
+import static berlin.yuna.natsserver.model.ValueSource.ENV;
+import static berlin.yuna.natsserver.model.ValueSource.FILE;
 import static java.lang.Integer.parseInt;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
@@ -66,13 +72,13 @@ public abstract class NatsBase implements AutoCloseable {
 
     final String name;
     final Logger logger;
-    final Map<NatsConfig, String> config = new ConcurrentHashMap<>();
+    final Map<NatsConfig, MapValue> config = new ConcurrentHashMap<>();
     final List<String> customArgs = new ArrayList<>();
     Process process;
     private static final String TMP_DIR = "java.io.tmpdir";
 
     NatsBase(final List<String> customArgs) {
-        setDefaultConfig().setEnvConfig().readPropertyFile();
+        setDefaultConfig().setEnvConfig().readConfigFile();
         this.name = getValue(NATS_LOG_NAME);
         this.logger = getLogger(name);
         this.customArgs.addAll(customArgs);
@@ -183,7 +189,7 @@ public abstract class NatsBase implements AutoCloseable {
      * @return config key value
      */
     public String getValue(final NatsConfig key, final Supplier<String> or) {
-        return resolveEnvs(Optional.ofNullable(config.get(key)).orElseGet(or), config);
+        return resolveEnvs(Optional.ofNullable(config.get(key)).map(MapValue::value).orElseGet(or), config);
     }
 
     NatsBase deletePidFile() {
@@ -210,14 +216,15 @@ public abstract class NatsBase implements AutoCloseable {
 
     String prepareCommand() {
         final StringBuilder command = new StringBuilder();
-        final Map<NatsConfig, String> finalConfig = resolveConfig();
+        setDefaultConfig().setEnvConfig().readConfigFile();
+        addConfig(DSL, PID, pidFile().toString());
         command.append(binaryFile().toString());
-        finalConfig.forEach((cfg, value) -> {
-            if (!cfg.name().startsWith(NATS_PREFIX) && !isEmpty(value)) {
+        config.forEach((key, mapValue) -> {
+            if (!key.name().startsWith(NATS_PREFIX) && mapValue != null && !isEmpty(mapValue.value())) {
                 command.append(" ");
-                command.append(cfg.key());
-                if (!cfg.desc().startsWith("[/]")) {
-                    command.append(value.trim().toLowerCase());
+                command.append(key.key());
+                if (!key.desc().startsWith("[/]")) {
+                    command.append(mapValue.value().trim().toLowerCase());
                 }
             }
         });
@@ -228,19 +235,18 @@ public abstract class NatsBase implements AutoCloseable {
 
     NatsBase setNextFreePort() {
         if (getValue(PORT, () -> "-1").equals("-1")) {
-            config.put(PORT, "" + getNextFreePort((int) PORT.valueRaw()));
+            addConfig(config.get(PORT).source(), PORT, String.valueOf(getNextFreePort((int) PORT.valueRaw())));
         }
         return this;
     }
 
-    private Map<NatsConfig, String> resolveConfig() {
-        final Map<NatsConfig, String> finalConfig = new EnumMap<>(this.config);
-        finalConfig.computeIfAbsent(PID, value -> pidFile().toString());
-        stream(NatsConfig.values()).forEach(key -> finalConfig.computeIfAbsent(key, value -> getValue(key)));
-        return finalConfig;
+    void addConfig(final ValueSource source, final NatsConfig key, final String value) {
+        if (value != null) {
+            config.put(key, config.computeIfAbsent(key, val -> mapValueOf(source, value)).update(source, value));
+        }
     }
 
-    private NatsBase readPropertyFile() {
+    private NatsBase readConfigFile() {
         if (config.containsKey(NATS_CONFIG_FILE)) {
             final Properties prop = new Properties();
             try (final InputStream inputStream = new FileInputStream(getValue(NATS_CONFIG_FILE))) {
@@ -248,7 +254,7 @@ public abstract class NatsBase implements AutoCloseable {
             } catch (IOException e) {
                 getLogger(getValue(NATS_LOG_NAME)).severe("Unable to read property file [" + e.getMessage() + "]");
             }
-            prop.forEach((key, value) -> config.put(NatsConfig.valueOf((String) key), removeQuotes((String) value)));
+            prop.forEach((key, value) -> addConfig(FILE, NatsConfig.valueOf(String.valueOf(key)), removeQuotes((String) value)));
         }
         return this;
     }
@@ -256,20 +262,15 @@ public abstract class NatsBase implements AutoCloseable {
     private NatsBase setDefaultConfig() {
         for (NatsConfig cfg : NatsConfig.values()) {
             final String value = cfg.value();
-            if (value != null) {
-                config.put(cfg, value);
-            }
+            addConfig(DEFAULT, cfg, value);
         }
-        config.put(NATS_SYSTEM, NatsUtils.getSystem());
+        addConfig(DEFAULT, NATS_SYSTEM, NatsUtils.getSystem());
         return this;
     }
 
     private NatsBase setEnvConfig() {
         for (NatsConfig cfg : NatsConfig.values()) {
-            final String value = getEnv(cfg.name().startsWith(NATS_PREFIX) ? cfg.name() : NATS_PREFIX + cfg.name());
-            if (value != null) {
-                config.put(cfg, value);
-            }
+            addConfig(ENV, cfg, getEnv(cfg.name().startsWith(NATS_PREFIX) ? cfg.name() : NATS_PREFIX + cfg.name()));
         }
         return this;
     }
