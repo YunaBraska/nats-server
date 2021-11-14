@@ -4,7 +4,7 @@ import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsConfig;
 import berlin.yuna.natsserver.model.MapValue;
-import berlin.yuna.natsserver.model.NatsStartException;
+import berlin.yuna.natsserver.model.exception.NatsStartException;
 
 import java.io.IOException;
 import java.net.BindException;

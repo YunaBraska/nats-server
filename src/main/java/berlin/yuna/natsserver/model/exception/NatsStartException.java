@@ -1,4 +1,4 @@
-package berlin.yuna.natsserver.model;
+package berlin.yuna.natsserver.model.exception;
 
 public class NatsStartException extends RuntimeException {
 
