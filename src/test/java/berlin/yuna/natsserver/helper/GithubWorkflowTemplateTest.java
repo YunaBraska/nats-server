@@ -38,7 +38,7 @@ class GithubWorkflowTemplateTest {
     }
 
     private void replacePlaceHolder(final Path file) {
-        AtomicBoolean replaceMode = new AtomicBoolean(false);
+        final AtomicBoolean replaceMode = new AtomicBoolean(false);
         final StringBuilder newContent = new StringBuilder();
         readLines(file, line -> {
             if (!replaceMode.get()) {
@@ -86,7 +86,7 @@ class GithubWorkflowTemplateTest {
 
     private void readLines(final Path file, final Consumer<String> consumer) {
         try {
-            Scanner scanner = new Scanner(file, UTF_8.name()).useDelimiter("(?<=\n)|(?!\n)(?<=\r)");
+            final Scanner scanner = new Scanner(file, UTF_8.name()).useDelimiter("(?<=\n)|(?!\n)(?<=\r)");
             while (scanner.hasNext()) {
                 final String line = scanner.next();
                 if (line != null) {
