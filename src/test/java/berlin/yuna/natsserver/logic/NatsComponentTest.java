@@ -22,13 +22,10 @@ import static berlin.yuna.natsserver.config.NatsConfig.ADDR;
 import static berlin.yuna.natsserver.config.NatsConfig.AUTH;
 import static berlin.yuna.natsserver.config.NatsConfig.DEBUG;
 import static berlin.yuna.natsserver.config.NatsConfig.JETSTREAM;
-import static berlin.yuna.natsserver.config.NatsConfig.NATS_CONFIG_FILE;
-import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
 import static berlin.yuna.natsserver.config.NatsConfig.PASS;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.TRACE;
 import static berlin.yuna.natsserver.config.NatsConfig.USER;
-import static berlin.yuna.natsserver.logic.NatsUtils.getSystem;
 import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
 import static berlin.yuna.natsserver.model.ValueSource.ENV;
 import static java.util.Objects.requireNonNull;
@@ -194,7 +191,7 @@ class NatsComponentTest {
 
     @Test
     @DisplayName("Configure with NULL value should be ignored")
-    void natsServer_withNullableConfigValue_shouldNotRunIntroExceptionOrInterrupt() throws Exception {
+    void natsServer_withNullableConfigValue_shouldNotRunIntroExceptionOrInterrupt() {
         assertThrows(NullPointerException.class, () -> nats.config().put(ADDR, null));
     }
 

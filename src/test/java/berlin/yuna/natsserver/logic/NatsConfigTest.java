@@ -27,7 +27,6 @@ import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.logic.NatsBase.NATS_PREFIX;
 import static berlin.yuna.natsserver.logic.NatsUtils.getSystem;
-import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
