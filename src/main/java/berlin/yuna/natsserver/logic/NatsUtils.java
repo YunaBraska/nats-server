@@ -2,7 +2,7 @@ package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
 import berlin.yuna.natsserver.model.MapValue;
-import berlin.yuna.natsserver.model.NatsDownloadException;
+import berlin.yuna.natsserver.model.exception.NatsDownloadException;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

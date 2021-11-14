@@ -1,9 +1,9 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
-import berlin.yuna.natsserver.model.NatsDownloadException;
-import berlin.yuna.natsserver.model.NatsFileReaderException;
-import berlin.yuna.natsserver.model.NatsStartException;
+import berlin.yuna.natsserver.model.exception.NatsDownloadException;
+import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
+import berlin.yuna.natsserver.model.exception.NatsStartException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
