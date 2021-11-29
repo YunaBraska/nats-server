@@ -1,7 +1,6 @@
 # nats-server
 
-[Nats server](https://github.com/nats-io/nats-server) for testing which contains the
-original [Nats server](https://github.com/nats-io/nats-server)
+Nats Server for testing which contains the original [Nats server](https://github.com/nats-io/nats-server)
 
 [![Build][build_shield]][build_link]
 [![Maintainable][maintainable_shield]][maintainable_link]
@@ -46,6 +45,8 @@ original [Nats server](https://github.com/nats-io/nats-server)
 * Nats **plain Java**
   * [Nats-Server](https://github.com/YunaBraska/nats-server)
   * [Nats-Streaming-Server](https://github.com/YunaBraska/nats-streaming-server)
+* Nats for **JUnit**
+  * [Nats-Server-JUnit](https://github.com/YunaBraska/nats-server-junit)
 * Nats for **Spring Boot**
   * [Nats-Server-Embedded](https://github.com/YunaBraska/nats-server-embedded)
   * [Nats-Streaming-Server-Embedded](https://github.com/YunaBraska/nats-streaming-server-embedded)
@@ -57,7 +58,7 @@ original [Nats server](https://github.com/nats-io/nats-server)
 <dependency>
   <groupId>berlin.yuna</groupId>
   <artifactId>nats-server</artifactId>
-  <version>2.6.7</version>
+  <version>2.6.11</version>
 </dependency>
 ```
 
@@ -86,6 +87,7 @@ original [Nats server](https://github.com/nats-io/nats-server)
 | pidFile                              | Path to PID file                                 |
 | config                               | Get config map                                   |
 | getValue                             | Get resolved config for a key                    |
+| getConfigFile                        | Get resolved config file if exists               |
 
 #### Setter
 
@@ -107,21 +109,22 @@ original [Nats server](https://github.com/nats-io/nats-server)
 | config(Map<key, value>)              | Set config map                                   |
 | config(key, value...)                | Set config array                                 |
 
-* All configurations are optional. (see all configs
-  here: [NatsConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java))
-
 ### Example
 
 ```java
 public class MyNatsTest {
 
   public static void main(final String[] args) {
-    final Nats nats = new Nats()
-            .source("http://myOwnCachedNatsServerVersion")
-            .port(4222) //-1 for a random port
+    final Nats nats = new Nats(4222) //-1 for a random port
             .config(
-                    USER, "yuna",
-                    PASS, "braska"
+                    USER, "my_optional_user",
+                    PASS, "my_optional_password",
+                    NATS_BINARY_PATH, "optional/ready/to/use/nats/file",
+                    NATS_DOWNLOAD_URL, "optional/nats/download/url",
+                    NATS_CONFIG_FILE, "optional/config/file",
+                    NATS_ARGS, "--optionalArg1=123\\,--optionalArg2=456",
+                    NATS_VERSION, "v.1.0.0.optional",
+                    NATS_SYSTEM, "optional_download_suffix"
             )
             .start();
     nats.stop();
