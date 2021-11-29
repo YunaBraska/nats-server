@@ -106,9 +106,16 @@ class NatsConfigTest {
     }
 
     @Test
-    @DisplayName("Nats property file")
+    @DisplayName("Nats property file absolute")
     void propertyFileConfig() {
         System.setProperty(NATS_CONFIG_FILE.name(), customPropertiesFile);
+        assertCustomConfig(new Nats());
+    }
+
+    @Test
+    @DisplayName("Nats property file relative")
+    void propertyFileConfigRelative() {
+        System.setProperty(NATS_CONFIG_FILE.name(), "custom.properties");
         assertCustomConfig(new Nats());
     }
 

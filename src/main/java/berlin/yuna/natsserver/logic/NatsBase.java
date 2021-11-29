@@ -35,6 +35,7 @@ import static berlin.yuna.natsserver.config.NatsConfig.NATS_LOG_NAME;
 import static berlin.yuna.natsserver.config.NatsConfig.NATS_SYSTEM;
 import static berlin.yuna.natsserver.config.NatsConfig.PID;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
+import static berlin.yuna.natsserver.logic.NatsUtils.createPathSuppliers;
 import static berlin.yuna.natsserver.logic.NatsUtils.download;
 import static berlin.yuna.natsserver.logic.NatsUtils.getEnv;
 import static berlin.yuna.natsserver.logic.NatsUtils.getNextFreePort;
@@ -192,6 +193,23 @@ public abstract class NatsBase implements AutoCloseable {
         return resolveEnvs(Optional.ofNullable(config.get(key)).map(MapValue::value).orElseGet(or), config);
     }
 
+    /**
+     * Resolves the config file from the configuration e.g. {@link Nats#config(NatsConfig, String)}
+     *
+     * @return config file as optional path - not empty if file exists
+     */
+    public Optional<Path> getConfigFile() {
+        if (config.containsKey(NATS_CONFIG_FILE) && !isEmpty(config.get(NATS_CONFIG_FILE).value())) {
+            for (Supplier<Path> supplier : createPathSuppliers(getValue(NATS_CONFIG_FILE))) {
+                final Path path = supplier.get();
+                if (path != null && Files.exists(path)) {
+                    return Optional.of(path);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     NatsBase deletePidFile() {
         try {
             Files.deleteIfExists(pidFile());
@@ -247,15 +265,15 @@ public abstract class NatsBase implements AutoCloseable {
     }
 
     private NatsBase readConfigFile() {
-        if (config.containsKey(NATS_CONFIG_FILE)) {
+        getConfigFile().ifPresent(path -> {
             final Properties prop = new Properties();
-            try (final InputStream inputStream = new FileInputStream(getValue(NATS_CONFIG_FILE))) {
+            try (final InputStream inputStream = new FileInputStream(path.toFile())) {
                 prop.load(inputStream);
             } catch (IOException e) {
-                getLogger(getValue(NATS_LOG_NAME)).severe("Unable to read property file [" + e.getMessage() + "]");
+                getLogger(getValue(NATS_LOG_NAME)).severe("Unable to read property file [" + path.toUri() + "] cause of [" + e.getMessage() + "]");
             }
             prop.forEach((key, value) -> addConfig(FILE, NatsConfig.valueOf(String.valueOf(key)), removeQuotes((String) value)));
-        }
+        });
         return this;
     }
 
