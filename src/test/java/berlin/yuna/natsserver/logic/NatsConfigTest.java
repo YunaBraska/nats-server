@@ -120,6 +120,18 @@ class NatsConfigTest {
     }
 
     @Test
+    @DisplayName("Nats default property file")
+    void propertyDefaultFileConfig() throws IOException {
+        final Path defaultFile = Paths.get(Paths.get(customPropertiesFile).getParent().toString(), "nats.properties");
+        Files.deleteIfExists(defaultFile);
+
+        Files.write(defaultFile, "ADDR=\"default nats file\"".getBytes());
+        assertThat(new Nats().getValue(ADDR), is(equalTo("default nats file")));
+
+        Files.deleteIfExists(defaultFile);
+    }
+
+    @Test
     @DisplayName("Nats non existing property file")
     void propertyNonExistingFileConfig() {
         System.setProperty(NATS_CONFIG_FILE.name(), "invalid");

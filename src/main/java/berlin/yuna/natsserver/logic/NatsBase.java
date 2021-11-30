@@ -199,12 +199,10 @@ public abstract class NatsBase implements AutoCloseable {
      * @return config file as optional path - not empty if file exists
      */
     public Optional<Path> getConfigFile() {
-        if (config.containsKey(NATS_CONFIG_FILE) && !isEmpty(config.get(NATS_CONFIG_FILE).value())) {
-            for (Supplier<Path> supplier : createPathSuppliers(getValue(NATS_CONFIG_FILE))) {
-                final Path path = supplier.get();
-                if (path != null && Files.exists(path)) {
-                    return Optional.of(path);
-                }
+        for (Supplier<Path> supplier : createPathSuppliers(Optional.ofNullable(getValue(NATS_CONFIG_FILE)).filter(file -> !isEmpty(file)).orElse("nats.properties"))) {
+            final Path path = supplier.get();
+            if (path != null && Files.exists(path)) {
+                return Optional.of(path);
             }
         }
         return Optional.empty();
@@ -258,10 +256,11 @@ public abstract class NatsBase implements AutoCloseable {
         return this;
     }
 
-    void addConfig(final ValueSource source, final NatsConfig key, final String value) {
+    NatsBase addConfig(final ValueSource source, final NatsConfig key, final String value) {
         if (value != null) {
             config.put(key, config.computeIfAbsent(key, val -> mapValueOf(source, value)).update(source, value));
         }
+        return this;
     }
 
     private NatsBase readConfigFile() {
@@ -272,7 +271,7 @@ public abstract class NatsBase implements AutoCloseable {
             } catch (IOException e) {
                 getLogger(getValue(NATS_LOG_NAME)).severe("Unable to read property file [" + path.toUri() + "] cause of [" + e.getMessage() + "]");
             }
-            prop.forEach((key, value) -> addConfig(FILE, NatsConfig.valueOf(String.valueOf(key)), removeQuotes((String) value)));
+            prop.forEach((key, value) -> addConfig(FILE, NatsConfig.valueOf(String.valueOf(key).toUpperCase()), removeQuotes((String) value)));
         });
         return this;
     }

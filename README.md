@@ -58,7 +58,7 @@ Nats Server for testing which contains the original [Nats server](https://github
 <dependency>
   <groupId>berlin.yuna</groupId>
   <artifactId>nats-server</artifactId>
-  <version>2.6.11</version>
+  <version>2.6.12</version>
 </dependency>
 ```
 
@@ -68,7 +68,7 @@ Nats Server for testing which contains the original [Nats server](https://github
 
 1) Custom Arguments
 2) Java config
-3) Property File (*1)
+3) Property File (default `nats.properties`)
 4) Environment Variables (*1)
 5) Default Config
 
