@@ -1,6 +1,6 @@
 ## Java Nats-Server
 
-![logo](../src/test/resources/nats-java.png)
+![logo](https://github.com/YunaBraska/nats-server/raw/main/src/test/resources/nats-java.png)
 
 Nats Server for testing which contains the original [Nats server](https://github.com/nats-io/nats-server)
 
