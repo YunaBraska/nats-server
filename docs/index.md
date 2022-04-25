@@ -1,8 +1,8 @@
-## Java Nats-Server
+## Java Nats Server
 
 ![logo](https://github.com/YunaBraska/nats-server/raw/main/src/test/resources/nats-java.png)
 
-Nats Server for testing which contains the original [Nats server](https://github.com/nats-io/nats-server)
+Nats Server for testing which contains the original [Nats](https://github.com/nats-io/nats-server)
 
 ### Index
 
@@ -43,9 +43,6 @@ Nats Server for testing which contains the original [Nats server](https://github
 3) Property File (default `nats.properties`)
 4) Environment Variables (*1)
 5) Default Config
-
-* *1 configs must start with "NATS_" and the additional option
-  from [NatsConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java))*
 
 ### Common methods
 
@@ -122,7 +119,7 @@ public class MyNatsTest {
             .config(NATS_DOWNLOAD_URL, "optional/nats/download/url")
             .config(NATS_CONFIG_FILE, "optional/config/file")
             .config(NATS_ARGS, "--optionalArg1=123\\,--optionalArg2=456")
-            .config(NATS_VERSION, "v.1.0.0.optional")
+            .config(NATS_STREAMING_VERSION, "v.1.0.0.optional")
             .config(NATS_SYSTEM, "optional_download_suffix")
             .start();
     nats.stop();
