@@ -2,6 +2,8 @@
 
 ![logo](https://github.com/YunaBraska/nats-server/raw/main/src/test/resources/nats-java.png)
 
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=HFHFUT3G6TZF6)
+
 Nats Server for testing which contains the original [Nats](https://github.com/nats-io/nats-server)
 
 ### Index
