@@ -15,6 +15,7 @@ import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static berlin.yuna.clu.logic.SystemUtil.readFile;
 import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
@@ -36,6 +38,8 @@ import static org.hamcrest.Matchers.empty;
 @Tag("IntegrationTest")
 @DisplayName("NatsServer ConfigTest")
 class NatsConfigComponentTest {
+
+    public static final Pattern RELEASE_PATTERN = Pattern.compile("\"tag_name\":\"(?<version>.*?)\"");
 
     @Test
     @DisplayName("Compare nats with java config")
@@ -74,19 +78,29 @@ class NatsConfigComponentTest {
     }
 
     private void updateNatsVersion() throws IOException {
-        final Path configPath = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99).filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsConfig.class.getSimpleName() + ".java")).findFirst().orElse(null);
-        final URL url = new URL("https://api.github.com/repos/nats-io/nats-server/releases/latest");
-        final HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
+        try (final Stream<Path> stream = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99)) {
+            final Path configJavaFile = stream.filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsConfig.class.getSimpleName() + ".java")).findFirst().orElse(null);
+            final URL url = new URL("https://api.github.com/repos/nats-io/nats-server/releases/latest");
+            final HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
 
-        final String json = read(con.getInputStream());
-        final Matcher matcher = Pattern.compile("\"tag_name\":\"(?<version>.*?)\"").matcher(json);
+            final String previousVersion = NATS_VERSION.value();
+            final String newVersion = updateNatsVersion(configJavaFile, read(con.getInputStream()));
+            if (!requireNonNull(previousVersion).equals(newVersion)) {
+                Files.write(Paths.get(System.getProperty("user.dir"), "version.txt"), (newVersion.startsWith("v") ? newVersion.substring(1) : newVersion).getBytes());
+            }
+        }
+    }
+
+    private static String updateNatsVersion(final Path configJavaFile, final String release_json) throws IOException {
+        final Matcher matcher = RELEASE_PATTERN.matcher(release_json);
         if (matcher.find()) {
             final String version = matcher.group("version");
             System.out.println("LATEST NATS VERSION [" + version + "]");
-            String content = readFile(requireNonNull(configPath));
+            String content = readFile(requireNonNull(configJavaFile));
             content = content.replaceFirst("(?<prefix>" + NATS_VERSION.name() + "\\(\")(.*)(?<suffix>\",\\s\")", "${prefix}" + version + "${suffix}");
-            Files.write(configPath, content.getBytes());
+            Files.write(configJavaFile, content.getBytes());
+            return version;
         } else {
             throw new IllegalStateException("Could not update nats server version");
         }

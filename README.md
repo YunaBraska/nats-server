@@ -19,8 +19,8 @@ Nats Server for testing which contains the original [Nats server](https://github
 [![Size][size_shield]][size_shield]
 ![Label][label_shield]
 
-[build_shield]: https://github.com/YunaBraska/nats-server/workflows/JAVA_CI/badge.svg
-[build_link]: https://github.com/YunaBraska/nats-server/actions?query=workflow%3AJAVA_CI
+[build_shield]: https://github.com/YunaBraska/nats-server/workflows/MVN_RELEASE/badge.svg
+[build_link]: https://github.com/YunaBraska/nats-server/actions?query=workflow%3AMVN_RELEASE
 [maintainable_shield]: https://img.shields.io/codeclimate/maintainability/YunaBraska/nats-server?style=flat-square
 [maintainable_link]: https://codeclimate.com/github/YunaBraska/nats-server/maintainability
 [coverage_shield]: https://img.shields.io/codeclimate/coverage/YunaBraska/nats-server?style=flat-square
