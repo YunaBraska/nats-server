@@ -61,8 +61,8 @@ class NatsConfigComponentTest {
         final Set<String> missingConfigInJava = getNotMatchingEntities(consoleConfigKeys, javaConfigKeys);
 
         final Set<String> missingConfigInConsole = getNotMatchingEntities(javaConfigKeys, consoleConfigKeys);
-        assertThat("Missing config in java \n" + console, missingConfigInJava, is(empty()));
-        assertThat("Config was removed by nats", missingConfigInConsole, is(empty()));
+        assertThat("Missing config in java \n [" + nats.binaryFile() + "] \n" + console, missingConfigInJava, is(empty()));
+        assertThat("Config was removed by nats \n [" + nats.binaryFile() + "] \n", missingConfigInConsole, is(empty()));
     }
 
     @Test

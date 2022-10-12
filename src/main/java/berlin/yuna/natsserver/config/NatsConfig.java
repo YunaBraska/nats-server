@@ -6,6 +6,7 @@ public enum NatsConfig {
 
     // Server Options
     NAME(null, "[STRING] Server name (default: auto)"),
+    SERVER_NAME(null, "[STRING] Server name (default: auto)"),
     SIGNAL(null, "[STRING] [SIGNAL] Send signal to nats-server process (stop, quit, reopen)"),
     PID(null, "[STRING] File to store PID"),
     CLIENT_ADVERTISE(null, "[STRING] Client URL to advertise to other servers"),
@@ -15,13 +16,16 @@ public enum NatsConfig {
     NO_ADVERTISE(null, "[BOOL] Advertise known cluster IPs to clients"),
     CLUSTER_ADVERTISE(null, "[STRING] Cluster URL to advertise to other servers"),
     CONNECT_RETRIES(null, "[INT] For implicit routes, number of connect retries"),
+    CLUSTER_LISTEN(null, "[STRING] Cluster url from which members can solicit routes"),
 
     //NATS Server Options
     ADDR("0.0.0.0", "[STRING] Bind to host address (default: 0.0.0.0)"),
+    NET("0.0.0.0", "[STRING] Bind to host address (default: 0.0.0.0)"),
     PORT(4222, "[INT] Use port for clients (default: 4222)"),
     HTTP_PORT(null, "[INT] Use port for http monitoring"),
     HTTPS_PORT(null, "[INT] Use port for https monitoring"),
     CONFIG(null, "[STRING] Configuration file"),
+    PORTS_FILE_DIR(null, "[STRING] Creates a ports file in the specified directory (<executable_name>_<pid>.ports)"),
 
     //NATS Server Logging Options
     LOG(null, "[STRING] File to redirect log output"),
@@ -30,6 +34,8 @@ public enum NatsConfig {
     SYSLOG(null, "[/] Log to syslog or windows event log"),
     LOGTIME(null, "[/] Timestamp log entries (default: true)"),
     REMOTE_SYSLOG(null, "[STRING] Syslog server addr (udp://localhost:514)"),
+    LOG_SIZE_LIMIT(null, "[INT] Logfile size limit (default: auto)"),
+    MAX_TRACED_MSG_LEN(null, "[INT] Maximum printable length for traced messages (default: unlimited)"),
 
     //JetStream Options,
     JETSTREAM(null, "[/] Enable JetStream functionality"),
@@ -50,6 +56,10 @@ public enum NatsConfig {
     //NATS Clustering Options
     ROUTES(null, "[STRING] Routes to solicit and connect"),
     CLUSTER(null, "[STRING] Cluster URL for solicited routes"),
+
+    //Profile Options
+    PROFILE(null, "[INT] Profiling HTTP port"),
+
 
     //WRAPPER configs
     NATS_SYSTEM(null, "[STRING] suffix for binary path"),
