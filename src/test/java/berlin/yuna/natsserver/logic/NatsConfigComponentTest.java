@@ -44,9 +44,9 @@ class NatsConfigComponentTest {
     @Test
     @DisplayName("Compare nats with java config")
     void compareNatsConfig() throws IOException {
-        updateNatsVersion();
+        final String newNatsVersion = updateNatsVersion();
         Files.deleteIfExists(new Nats().binaryFile());
-        final Nats nats = new Nats(-1);
+        final Nats nats = new Nats(-1).config(NATS_VERSION, newNatsVersion);
         nats.downloadNats();
         final Path natsServerPath = nats.binaryFile();
 
@@ -77,7 +77,7 @@ class NatsConfigComponentTest {
         assertThat(NatsConfig.NO_ADVERTISE.key(), is(equalTo("--no_advertise=")));
     }
 
-    private void updateNatsVersion() throws IOException {
+    private String updateNatsVersion() throws IOException {
         try (final Stream<Path> stream = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99)) {
             final Path configJavaFile = stream.filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsConfig.class.getSimpleName() + ".java")).findFirst().orElse(null);
             final URL url = new URL("https://api.github.com/repos/nats-io/nats-server/releases/latest");
@@ -89,6 +89,7 @@ class NatsConfigComponentTest {
             if (!requireNonNull(previousVersion).equals(newVersion)) {
                 Files.write(Paths.get(System.getProperty("user.dir"), "version.txt"), (newVersion.startsWith("v") ? newVersion.substring(1) : newVersion).getBytes());
             }
+            return newVersion;
         }
     }
 
