@@ -24,6 +24,7 @@ import static berlin.yuna.natsserver.config.NatsConfig.DEBUG;
 import static berlin.yuna.natsserver.config.NatsConfig.JETSTREAM;
 import static berlin.yuna.natsserver.config.NatsConfig.PASS;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
+import static berlin.yuna.natsserver.config.NatsConfig.PROFILE;
 import static berlin.yuna.natsserver.config.NatsConfig.TRACE;
 import static berlin.yuna.natsserver.config.NatsConfig.USER;
 import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
@@ -52,7 +53,7 @@ class NatsComponentTest {
 
     @AfterEach
     void afterEach() {
-        nats.stop(NATS_TIMEOUT * 8);
+        nats.stop(NATS_TIMEOUT * 10);
     }
 
     @Test
@@ -198,7 +199,7 @@ class NatsComponentTest {
     @Test
     @DisplayName("Configure with invalid config value [FAIL]")
     void natsServer_withInvalidConfigValue_shouldNotRunIntroExceptionOrInterrupt() {
-        nats.config(ADDR.name(), "invalidValue", PORT.name(), "4237");
+        nats.config(PROFILE.name(), "invalidValue", PORT.name(), "4237");
         assertThrows(
                 PortUnreachableException.class,
                 () -> nats.start(NATS_TIMEOUT),
