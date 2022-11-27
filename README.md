@@ -18,6 +18,7 @@ Nats Server for testing which contains the original [Nats server](https://github
 [![Javadoc][javadoc_shield]][javadoc_link]
 [![Size][size_shield]][size_shield]
 ![Label][label_shield]
+![Label][java_version]
 
 [build_shield]: https://github.com/YunaBraska/nats-server/workflows/MVN_RELEASE/badge.svg
 [build_link]: https://github.com/YunaBraska/nats-server/actions?query=workflow%3AMVN_RELEASE
@@ -43,5 +44,6 @@ Nats Server for testing which contains the original [Nats server](https://github
 [label_shield]: https://img.shields.io/badge/Yuna-QueenInside-blueviolet?style=flat-square
 [gitter_shield]: https://img.shields.io/gitter/room/YunaBraska/nats-server?style=flat-square
 [gitter_link]: https://gitter.im/nats-server/Lobby
+[java_version]: https://img.shields.io/badge/java-17-blueviolet?style=flat-square
 
 For more, have a look to the [Documentation (GitHubPage)](https://yunabraska.github.io/nats-server/) *(You will find Examples, Configs, Spring, Junit, etc.)*
