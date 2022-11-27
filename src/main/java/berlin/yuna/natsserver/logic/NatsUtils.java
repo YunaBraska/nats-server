@@ -1,5 +1,6 @@
 package berlin.yuna.natsserver.logic;
 
+import berlin.yuna.clu.model.ThrowingFunction;
 import berlin.yuna.natsserver.config.NatsConfig;
 import berlin.yuna.natsserver.model.MapValue;
 import berlin.yuna.natsserver.model.exception.NatsDownloadException;
@@ -28,6 +29,7 @@ import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH_TYPE;
 import static java.nio.channels.Channels.newChannel;
 import static java.util.Comparator.comparingLong;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class NatsUtils {
 
     private NatsUtils() {
@@ -129,7 +131,7 @@ public class NatsUtils {
     }
 
     public static boolean isEmpty(final String string) {
-        return string == null || string.trim().length() <= 0;
+        return string == null || string.trim().length() == 0;
     }
 
     private static String envValue(final String key, final Map<NatsConfig, MapValue> config) {
@@ -169,5 +171,12 @@ public class NatsUtils {
                     .replace("_", "");
         }
         return "";
+    }
+
+    public static void ignoreException(final ThrowingFunction<Long, Long> function) {
+        try {
+            function.acceptThrows(System.currentTimeMillis());
+        } catch (Exception ignored) {
+        }
     }
 }
