@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,41 +41,46 @@ import static org.hamcrest.Matchers.empty;
 class NatsConfigComponentTest {
 
     public static final Pattern RELEASE_PATTERN = Pattern.compile("\"tag_name\":\"(?<version>.*?)\"");
+    public static final int HELP_LINE_DESCRIPTION_INDEX = 37;
 
     @Test
     @DisplayName("Compare nats with java config")
-    void compareNatsConfig() throws IOException {
+    void compareNatsConfig() throws Exception {
         final String newNatsVersion = updateNatsVersion();
-        Files.deleteIfExists(new Nats().binaryFile());
-        final Nats nats = new Nats(-1).config(NATS_VERSION, newNatsVersion);
+        Files.deleteIfExists(new Nats().binary());
+        final Nats nats = new Nats(NatsOptionsImpl.builder().port(-1).build().config(NATS_VERSION, newNatsVersion));
         nats.downloadNats();
-        final Path natsServerPath = nats.binaryFile();
+        final Path natsServerPath = nats.binary();
 
-        final StringBuilder console = new StringBuilder();
 
-        final Terminal terminal = new Terminal().timeoutMs(10000).execute(natsServerPath.toString() + " --help");
-        console.append(terminal.consoleInfo()).append(terminal.consoleError());
+        final var console = new ArrayList<String>();
+        new Terminal().consumerInfoStream(console::add).consumerErrorStream(console::add).timeoutMs(10000).execute(natsServerPath.toString() + " --help");
+        final var missingConfigs = console.stream().filter(line -> line != null
+                && line.length() >= HELP_LINE_DESCRIPTION_INDEX
+                && line.contains("-")
+                && !line.startsWith("                                     ")
+                && stream(NatsConfig.values()).noneMatch(config -> config.desc().contains(line.substring(HELP_LINE_DESCRIPTION_INDEX).trim()))
+        ).toList();
 
-        final List<String> consoleConfigKeys = readConfigKeys(console.toString());
-        final List<String> javaConfigKeys = stream(NatsConfig.values()).map(Enum::name).filter(name -> !name.startsWith("NATS_")).collect(Collectors.toList());
-
-        final Set<String> missingConfigInJava = getNotMatchingEntities(consoleConfigKeys, javaConfigKeys);
-
-        final Set<String> missingConfigInConsole = getNotMatchingEntities(javaConfigKeys, consoleConfigKeys);
-        assertThat("Missing config in java \n [" + nats.binaryFile() + "] \n" + console, missingConfigInJava, is(empty()));
-        assertThat("Config was removed by nats \n [" + nats.binaryFile() + "] \n", missingConfigInConsole, is(empty()));
+        final var removedConfigs = stream(NatsConfig.values()).filter(config -> config.key() != null
+                        && console.stream().filter(Objects::nonNull).filter(line -> line.contains("-")).noneMatch(line ->
+                        line.matches(".*" + config.key() + "(?:$|\\n|,|\\s|\\n|\\r).*") && (line.length() < HELP_LINE_DESCRIPTION_INDEX || line.contains(config.desc().split("\\r?\\n")[0]))
+                )
+        ).map(config -> String.format("name[%s] key [%s] desc [%s]", config, config.key(), config.desc())).toList();
+        assertThat("Missing config in java \n [" + nats.binary() + "] \n", missingConfigs, is(empty()));
+        assertThat("Config was removed by nats \n [" + nats.binary() + "] \n", removedConfigs, is(empty()));
     }
 
     @Test
     @DisplayName("Compare config key with one dash")
     void getKey_WithOneDash_ShouldBeSuccessful() {
-        assertThat(NatsConfig.ADDR.key(), is(equalTo("--addr ")));
+        assertThat(NatsConfig.ADDR.key(), is(equalTo("--addr")));
     }
 
     @Test
     @DisplayName("Compare config key with equal sign")
     void getKey_WithBoolean_ShouldAddOneEqualSign() {
-        assertThat(NatsConfig.NO_ADVERTISE.key(), is(equalTo("--no_advertise=")));
+        assertThat(NatsConfig.NO_ADVERTISE.key(), is(equalTo("--no_advertise")));
     }
 
     private String updateNatsVersion() throws IOException {
@@ -99,7 +105,7 @@ class NatsConfigComponentTest {
             final String version = matcher.group("version");
             System.out.println("LATEST NATS VERSION [" + version + "]");
             String content = readFile(requireNonNull(configJavaFile));
-            content = content.replaceFirst("(?<prefix>" + NATS_VERSION.name() + "\\(\")(.*)(?<suffix>\",\\s\")", "${prefix}" + version + "${suffix}");
+            content = content.replaceFirst("(?<prefix>.*" + NATS_VERSION.name() + "\\(.*?\")(.*?)(?<suffix>\".*)", "${prefix}" + version + "${suffix}");
             Files.write(configJavaFile, content.getBytes());
             return version;
         } else {

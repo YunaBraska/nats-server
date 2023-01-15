@@ -27,6 +27,7 @@ import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.PROFILE;
 import static berlin.yuna.natsserver.config.NatsConfig.TRACE;
 import static berlin.yuna.natsserver.config.NatsConfig.USER;
+import static berlin.yuna.natsserver.logic.NatsOptionsImpl.defaultConfig;
 import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
 import static berlin.yuna.natsserver.model.ValueSource.ENV;
 import static java.util.Objects.requireNonNull;
@@ -34,7 +35,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,17 +43,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @DisplayName("NatsServer plain java")
 class NatsComponentTest {
 
-    private static final int NATS_TIMEOUT = 512;
     private Nats nats;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         nats = new Nats(-1);
     }
 
     @AfterEach
     void afterEach() {
-        nats.stop(NATS_TIMEOUT * 10);
+        nats.close();
     }
 
     @Test
@@ -69,49 +68,49 @@ class NatsComponentTest {
     @Test
     @DisplayName("Default config")
     void natsServer_withoutConfig_shouldStartWithDefaultValues() {
-        nats.tryStart(NATS_TIMEOUT);
+        nats.tryStart();
         assertThat(nats.pid(), is(greaterThan(-1)));
     }
 
     @Test
     @DisplayName("Default config JetStream")
-    void natsServer_withJetStream_shouldStartWithDefaultValues() {
-        nats.config(JETSTREAM, "true");
-        nats.tryStart(NATS_TIMEOUT);
+    void natsServer_withJetStream_shouldStartWithDefaultValues() throws Exception {
+        nats = new Nats(defaultConfig().config(JETSTREAM, "true"));
+        nats.tryStart();
         assertThat(nats.pid(), is(greaterThan(-1)));
     }
 
     @Test
     @DisplayName("Deactivate JetStream")
-    void natsServer_withJetStreamFalse_shouldNotUseJetStream() {
-        nats.config(JETSTREAM, "true");
+    void natsServer_withJetStreamFalse_shouldNotUseJetStream() throws Exception {
+        nats = new Nats(defaultConfig().config(JETSTREAM, "true"));
         assertThat(nats.getValue(JETSTREAM), is(notNullValue()));
-        nats.config(JETSTREAM, "false");
-        assertThat(nats.getValue(JETSTREAM), is(nullValue()));
+        nats = new Nats(defaultConfig().config(JETSTREAM, "false"));
+        assertThat(nats.getValue(JETSTREAM), is("false"));
     }
 
     @Test
     @DisplayName("Setup config")
-    void natsServer_configureConfig_shouldNotOverwriteOldConfig() {
-        nats.config("user", "adminUser", "PAss", "adminPw");
+    void natsServer_configureConfig_shouldNotOverwriteOldConfig() throws Exception {
+        nats = new Nats(defaultConfig().config("user", "adminUser", "PAss", "adminPw"));
 
         assertThat(nats.getValue(USER), is(equalTo("adminUser")));
         assertThat(nats.getValue(PASS), is(equalTo("adminPw")));
 
-        nats.config("user", "newUser");
+        nats = new Nats(defaultConfig().config("user", "newUser"));
         assertThat(nats.getValue(USER), is(equalTo("newUser")));
         assertThat(nats.getValue(PASS), is("adminPw"));
 
         final Map<NatsConfig, String> newConfig = new HashMap<>();
         newConfig.put(USER, "oldUser");
-        nats.config(newConfig);
+        nats = new Nats(NatsOptionsImpl.builder().configMap(newConfig).build());
         assertThat(nats.getValue(USER), is(equalTo("oldUser")));
     }
 
     @Test
     @DisplayName("Unknown config is ignored")
     void natsServer_invalidConfig_shouldThrowException() {
-        assertThrows(IllegalArgumentException.class, () -> nats.config("user", "adminUser", "auth", "isValid", "", "password", " "));
+        assertThrows(IllegalArgumentException.class, () -> new Nats(defaultConfig().config("user", "adminUser", "auth", "isValid", "", "password", " ")));
         assertThat(nats.getValue(AUTH), is(equalTo("isValid")));
     }
 
@@ -119,7 +118,7 @@ class NatsComponentTest {
     @DisplayName("Duplicate starts will be ignored")
     void natsServer_duplicateStart_shouldNotRunIntroExceptionOrInterrupt() throws Exception {
         nats.start();
-        nats.start(NATS_TIMEOUT);
+        nats.start();
         assertThat(nats.pid(), is(greaterThan(-1)));
     }
 
@@ -128,25 +127,25 @@ class NatsComponentTest {
     void natsServer_withWrongConfig_shouldNotStartAndThrowException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new Nats("unknown", "config", "port", "4232"),
+                () -> new Nats(defaultConfig().config("unknown", "config", "port", "4232")),
                 "No enum constant"
         );
     }
 
     @Test
     @DisplayName("Duplicate instances [FAIL]")
-    void natsServer_asTwoInstances_shouldThrowBindException() {
+    void natsServer_asTwoInstances_shouldThrowBindException() throws Exception {
         final Nats nats_Java_one = new Nats(4500);
         final Nats nats_Java_two = new Nats(4500);
         Exception exception = null;
         try {
             nats_Java_one.start();
-            nats_Java_two.start(NATS_TIMEOUT);
+            nats_Java_two.start();
         } catch (Exception e) {
             exception = e;
         } finally {
-            nats_Java_one.stop();
-            nats_Java_two.stop();
+            nats_Java_one.close();
+            nats_Java_two.close();
         }
         assertThat(requireNonNull(exception).getClass().getSimpleName(), is(equalTo(BindException.class.getSimpleName())));
     }
@@ -154,22 +153,22 @@ class NatsComponentTest {
     @Test
     @DisplayName("Stop without start will be ignored")
     void natsServer_stopWithoutStart_shouldNotRunIntroException() {
-        nats.stop();
+        nats.close();
         assertThat(nats.pid(), is(-1));
     }
 
     @Test
     @DisplayName("Start multiple times")
     void natsServer_multipleTimes_shouldBeOkay() throws Exception {
-        final Nats nats1 = new Nats(-1).start(NATS_TIMEOUT);
+        final Nats nats1 = new Nats(-1).start();
         final int pid1 = nats1.pid();
-        nats1.stop(NATS_TIMEOUT * 2);
-        final Nats nats2 = new Nats(-1).start(NATS_TIMEOUT);
+        nats1.close();
+        final Nats nats2 = new Nats(-1).start();
         final int pid2 = nats2.pid();
-        nats2.stop(NATS_TIMEOUT * 2);
-        final Nats nats3 = new Nats(-1).start(NATS_TIMEOUT);
+        nats2.close();
+        final Nats nats3 = new Nats(-1).start();
         final int pid3 = nats3.pid();
-        nats3.stop(NATS_TIMEOUT * 2);
+        nats3.close();
 
         assertThat(pid1, is(not(equalTo(pid2))));
         assertThat(pid2, is(not(equalTo(pid3))));
@@ -186,23 +185,23 @@ class NatsComponentTest {
         assertThat(nats1.pidFile(), is(not(equalTo(nats2.pidFile()))));
         assertThat(Files.exists(nats1.pidFile()), is(true));
         assertThat(Files.exists(nats2.pidFile()), is(true));
-        nats1.stop();
-        nats2.stop(NATS_TIMEOUT);
+        nats1.close();
+        nats2.close();
     }
 
     @Test
     @DisplayName("Configure with NULL value should be ignored")
     void natsServer_withNullableConfigValue_shouldNotRunIntroExceptionOrInterrupt() {
-        assertThrows(NullPointerException.class, () -> nats.config().put(ADDR, null));
+        assertThrows(NullPointerException.class, () -> new Nats(defaultConfig().config(ADDR, null)));
     }
 
     @Test
     @DisplayName("Configure with invalid config value [FAIL]")
-    void natsServer_withInvalidConfigValue_shouldNotRunIntroExceptionOrInterrupt() {
-        nats.config(PROFILE.name(), "invalidValue", PORT.name(), "4237");
+    void natsServer_withInvalidConfigValue_shouldNotRunIntroExceptionOrInterrupt() throws Exception {
+        new Nats(defaultConfig().config(PROFILE.name(), "invalidValue", PORT.name(), "4237"));
         assertThrows(
                 PortUnreachableException.class,
-                () -> nats.start(NATS_TIMEOUT),
+                () -> nats.close(),
                 "NatsServer failed to start"
         );
     }
@@ -210,7 +209,7 @@ class NatsComponentTest {
     @Test
     @DisplayName("Configure without value param")
     void natsServer_withoutValue() throws Exception {
-        nats.config(TRACE, "true").config(DEBUG, "true");
+        nats = new Nats(defaultConfig().config(TRACE, "true").config(DEBUG, "true"));
         nats.start();
         assertThat(nats.pid(), is(greaterThan(-1)));
     }
