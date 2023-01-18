@@ -3,6 +3,10 @@ package berlin.yuna.natsserver.logic;
 import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsConfig;
+import berlin.yuna.natsserver.config.NatsInterface;
+import berlin.yuna.natsserver.config.NatsOptions;
+import berlin.yuna.natsserver.config.NatsOptionsBuilder;
+import berlin.yuna.natsserver.config.OptionsNats;
 import berlin.yuna.natsserver.model.MapValue;
 import berlin.yuna.natsserver.model.ValueSource;
 import berlin.yuna.natsserver.model.exception.NatsStartException;
@@ -22,7 +26,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -46,7 +53,6 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Logger.getLogger;
 
 /**
@@ -58,165 +64,129 @@ import static java.util.logging.Logger.getLogger;
  * @since 1.0
  */
 @SuppressWarnings({"unused", "UnusedReturnValue", "java:S1133"})
-public class Nats extends NatsInterface {
+public class Nats implements NatsInterface {
 
-    protected Terminal terminal;
     protected final String name;
-    //TODO: Make final after removing start(timeoutMs)
-    protected long timeoutMs;
+    protected final Long timeoutMs;
+    private final Logger logger;
     protected final Map<NatsConfig, MapValue> configMap = new ConcurrentHashMap<>();
-    private static final String TMP_DIR = "java.io.tmpdir";
+    protected final AtomicReference<Terminal> terminal = new AtomicReference<>(null);
     public static final String NATS_PREFIX = "NATS_";
+    private static final String TMP_DIR = "java.io.tmpdir";
 
     /**
-     * @throws IOException              if {@link Nats} is not found or unsupported on the {@link SystemUtil}
-     * @throws BindException            if port is already taken
-     * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
+     * Throws all exceptions as {@link NatsStartException} which is a {@link RuntimeException} <br />
+     * Possible wrapped exceptions: <br />
+     * {@link IOException} if {@link Nats} is not found or unsupported on the {@link SystemUtil}  <br />
+     * {@link BindException} if port is already taken  <br />
+     * {@link PortUnreachableException} if {@link Nats} is not starting cause port is not free  <br />
      */
-    public Nats() throws Exception {
-        this(NatsOptionsImpl.builder().autoStart(false).build());
+    public Nats() {
+        this(OptionsNats.natsBuilder().autostart(true).build());
     }
 
     /**
-     * Starts the server if {@link NatsOptionsImpl#autoStart()} == true
+     * Starts the server if {@link NatsConfig#NATS_AUTOSTART} == true
+     * Throws all exceptions as {@link NatsStartException} which is a {@link RuntimeException} <br />
+     * Possible wrapped exceptions: <br />
+     * {@link IOException} if {@link Nats} is not found or unsupported on the {@link SystemUtil}  <br />
+     * {@link BindException} if port is already taken  <br />
+     * {@link PortUnreachableException} if {@link Nats} is not starting cause port is not free  <br />
      *
      * @param port the port to start on or &lt;=0 to use an automatically allocated port
-     * @throws IOException              if {@link Nats} is not found or unsupported on the {@link SystemUtil}
-     * @throws BindException            if port is already taken
-     * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
      */
-    public Nats(final int port) throws Exception {
-        this(NatsOptionsImpl.builder().port(port).build());
+    public Nats(final int port) {
+        this(OptionsNats.natsBuilder().port(port).build());
     }
 
     /**
-     * Starts the server if {@link NatsOptionsImpl#autoStart()} == true
+     * Starts the server if {@link NatsConfig#NATS_AUTOSTART} == true
+     * Throws all exceptions as {@link NatsStartException} which is a {@link RuntimeException} <br />
+     * Possible wrapped exceptions: <br />
+     * {@link IOException} if {@link Nats} is not found or unsupported on the {@link SystemUtil}  <br />
+     * {@link BindException} if port is already taken  <br />
+     * {@link PortUnreachableException} if {@link Nats} is not starting cause port is not free  <br />
      *
-     * @throws IOException              if {@link Nats} is not found or unsupported on the {@link SystemUtil}
-     * @throws BindException            if port is already taken
-     * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
+     * @param natsOptions nats options
      */
-    public Nats(final NatsOptions natsOptions) throws Exception {
-        super(natsOptions);
-        long timeoutMsTmp = -1;
-        if (natsOptions instanceof NatsOptionsImpl) {
-            ((NatsOptionsImpl) natsOptions).configMap().forEach(this::addConfig);
-            timeoutMsTmp = ((NatsOptionsImpl) natsOptions).timeoutMs();
-        }
+    public Nats(final NatsOptionsBuilder natsOptions) {
+        this(natsOptions.build());
+    }
+
+    /**
+     * Starts the server if {@link NatsConfig#NATS_AUTOSTART} == true
+     * Throws all exceptions as {@link NatsStartException} which is a {@link RuntimeException} <br />
+     * Possible wrapped exceptions: <br />
+     * {@link IOException} if {@link Nats} is not found or unsupported on the {@link SystemUtil}  <br />
+     * {@link BindException} if port is already taken  <br />
+     * {@link PortUnreachableException} if {@link Nats} is not starting cause port is not free  <br />
+     *
+     * @param natsOptions nats options
+     */
+    public Nats(final NatsOptions natsOptions) {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::close));
+        final var timeoutMsTmp = new AtomicLong(-1);
+        final OptionsNats options = natsOptions instanceof OptionsNats optionsNats ? optionsNats : null;
+        ofNullable(options).ifPresent(o -> o.config().forEach(this::addConfig));
         setDefaultConfig();
         setEnvConfig();
         setConfigFromProperties();
         setConfigFromNatsOptions(natsOptions);
         this.name = getValue(NATS_LOG_NAME);
-        this.timeoutMs = timeoutMsTmp > -1 ? timeoutMsTmp : SECONDS.toMillis(10);
-        if (natsOptions instanceof NatsOptionsImpl && ((NatsOptionsImpl) natsOptions).autoStart()) {
-            start();
-        }
+        this.timeoutMs = Long.parseLong(getValue(NATS_TIMEOUT_MS));
+        this.logger = ofNullable(natsOptions.logger()).orElse(Logger.getLogger(name));
+        ofNullable(natsOptions.logLevel()).ifPresent(logger::setLevel);
+        ofNullable(getValue(NATS_AUTOSTART)).filter(Boolean::valueOf).ifPresent(autostart -> start());
     }
 
     /**
-     * Starts the server if not already started e.g. by {@link NatsOptionsImpl#autoStart()} == true <br />
-     *
-     * @return {@link Nats}
-     * @throws IOException              if {@link Nats} is not found or unsupported on the {@link SystemUtil}
-     * @throws BindException            if port is already taken
-     * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
-     * @deprecated use {@link NatsOptionsImpl#timeoutMs()}
-     */
-    @Deprecated(since = "2.9.11", forRemoval = true)
-    public Nats start(final long timeoutMs) throws Exception {
-        this.timeoutMs = timeoutMs;
-        return start();
-    }
-
-    /**
-     * Starts the server if not already started e.g. by {@link NatsOptionsImpl#autoStart()} == true <br />
-     * Throws all exceptions as {@link NatsStartException} which is a {@link RuntimeException}
+     * Starts the server if not already started e.g. by {@link NatsConfig#NATS_AUTOSTART} == true <br />
+     * TThrows all exceptions as {@link NatsStartException} which is a {@link RuntimeException} <br />
+     * Possible wrapped exceptions: <br />
+     * {@link IOException} if {@link Nats} is not found or unsupported on the {@link SystemUtil}  <br />
+     * {@link BindException} if port is already taken  <br />
+     * {@link PortUnreachableException} if {@link Nats} is not starting cause port is not free  <br />
      *
      * @return {@link Nats}
      */
-    public Nats tryStart() {
+    public synchronized Nats start() {
         try {
-            return start();
+            if (terminal.get() != null && terminal.get().running()) {
+                logger.severe(() -> format("[%s] is already running", logger.getName()));
+                return this;
+            }
+            downloadNats();
+            final int port = setNextFreePort();
+            validatePort(port, timeoutMs, true, () -> new BindException("Address already in use [" + port + "]"), () -> false);
+            final String command = prepareCommand();
+            logger.info(() -> format("Starting [%s] port [%s] version [%s] command [%s]", name, port, getValue(NATS_SYSTEM), command));
+            startProcess(command);
+            validatePort(port, timeoutMs, false, () -> new PortUnreachableException(name + " failed to start with port [" + port + "]"), () -> terminal.get() == null);
+            logger.info(() -> format("Started [%s] port [%s] version [%s] pid [%s]", name, port, getValue(NATS_SYSTEM), pid()));
         } catch (Exception e) {
             throw new NatsStartException(e);
         }
-    }
-
-    /**
-     * Starts the server if not already started e.g. by {@link NatsOptionsImpl#autoStart()} == true <br />
-     * Throws all exceptions as {@link RuntimeException} <br />
-     *
-     * @param timeoutMs defines the start-up timeout {@code -1} no timeout, else waits until port up
-     * @return {@link Nats}
-     * @deprecated use {@link NatsOptionsImpl#timeoutMs()}
-     */
-    @Deprecated(since = "2.9.11", forRemoval = true)
-    public Nats tryStart(final long timeoutMs) {
-        this.timeoutMs = timeoutMs;
-        return tryStart();
-    }
-
-    /**
-     * Starts the server if not already started e.g. by {@link NatsOptionsImpl#autoStart()} == true
-     *
-     * @return {@link Nats}
-     * @throws IOException              if {@link Nats} is not found or unsupported on the {@link SystemUtil}
-     * @throws BindException            if port is already taken
-     * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
-     */
-//    @SuppressWarnings({"java:S899"})
-    public synchronized Nats start() throws Exception {
-        if (terminal != null && terminal.running()) {
-            logger.severe(() -> format("[%s] is already running", logger.getName()));
-            return this;
-        }
-
-        final int port = setNextFreePort();
-        validatePort(port, timeoutMs, true, () -> new BindException("Address already in use [" + port + "]"));
-        //TODO set binary file
-        final Path binaryPath = downloadNats();
-        logger.fine(() -> format("Starting [%s] port [%s] version [%s]", name, port, getValue(NATS_SYSTEM)));
-
-        terminal = new Terminal()
-                .consumerInfoStream(logger::info)
-                .consumerErrorStream(logger::severe)
-                .timeoutMs(timeoutMs > 0 ? timeoutMs : 10000)
-                .breakOnError(false)
-                .execute(prepareCommand(), null);
-
-        validatePort(port, timeoutMs, false, () -> new PortUnreachableException(name + " failed to start with port [" + port + "]"));
-        logger.info(() -> format("Started [%s] port [%s] version [%s] pid [%s]", name, port, getValue(NATS_SYSTEM), pid()));
         return this;
     }
 
-    /**
-     * Stops the {@link Process} and kills the {@link Nats} <br />
-     * Only a log error will occur if the {@link Nats} were never started <br />
-     *
-     * @param timeoutMs defines the tear down timeout, {@code -1} no timeout, else waits until port is free again
-     * @return {@link Nats}
-     * @deprecated use {@link Nats#close()}
-     */
-    @Deprecated(since = "2.9.11", forRemoval = true)
-    public Nats stop(final long timeoutMs) {
-        this.timeoutMs = timeoutMs;
-        close();
-        return this;
+    @Override
+    public Process process() {
+        return ofNullable(terminal.get()).map(Terminal::process).orElse(null);
     }
 
+    @Override
+    public String[] customArgs() {
+        return ofNullable(getValue(NATS_ARGS, () -> null)).map(args -> args.split(ARGS_SEPARATOR)).orElseGet(() -> new String[0]);
+    }
 
-    /**
-     * Stops the {@link Process} and kills the {@link Nats} <br />
-     * Only a log error will occur if the {@link Nats} were never started <br />
-     *
-     * @return {@link Nats}
-     * @deprecated use {@link Nats#close()}
-     */
-    @Deprecated(since = "2.9.11", forRemoval = true)
-    public Nats stop() {
-        close();
-        return this;
+    @Override
+    public Logger logger() {
+        return logger;
+    }
+
+    @Override
+    public Level loggingLevel() {
+        return logger.getLevel();
     }
 
     /**
@@ -233,17 +203,7 @@ public class Nats extends NatsInterface {
     }
 
     /**
-     * @return Path to binary file
-     * @deprecated use {@link Nats#binary()} <br/>
-     * see {@link NatsConfig#NATS_BINARY_PATH}
-     */
-    @Deprecated(since = "2.9.11", forRemoval = true)
-    public Path binaryFile() {
-        return binary();
-    }
-
-    /**
-     * @return Port (if &lt;=0, the port will be visible after {@link Nats#start()} - see also {@link NatsOptionsImpl#autoStart()}) <br/>
+     * @return Port (if &lt;=0, the port will be visible after {@link Nats#start()} - see also {@link NatsConfig#NATS_AUTOSTART}) <br/>
      * see {@link NatsConfig#PORT}
      */
     @Override
@@ -257,7 +217,7 @@ public class Nats extends NatsInterface {
      */
     @Override
     public boolean jetStream() {
-        return parseBoolean(getValue(PORT));
+        return parseBoolean(getValue(JETSTREAM));
     }
 
     /**
@@ -282,10 +242,10 @@ public class Nats extends NatsInterface {
 
     /**
      * @return custom property config file <br/>
-     * see {@link NatsConfig#NATS_CONFIG_FILE}
+     * see {@link NatsConfig#NATS_PROPERTY_FILE}
      */
     public Path configPropertyFile() {
-        return ofNullable(getValue(NATS_CONFIG_FILE, () -> null)).filter(Objects::nonNull).map(Path::of).orElse(null);
+        return ofNullable(getValue(NATS_PROPERTY_FILE, () -> null)).filter(Objects::nonNull).map(Path::of).orElse(null);
     }
 
     @Override
@@ -300,7 +260,7 @@ public class Nats extends NatsInterface {
      * @return config key value
      */
     public String getValue(final NatsConfig key) {
-        return getValue(key, () -> key.valueRaw() == null ? null : String.valueOf(key.valueRaw()));
+        return getValue(key, () -> key.defaultValue() == null ? null : String.valueOf(key.defaultValue()));
     }
 
     /**
@@ -344,9 +304,7 @@ public class Nats extends NatsInterface {
      * Nats download url which is usually a zip file <br />
      *
      * @return nats download url
-     * @deprecated use {@link Nats#getValue(NatsConfig)} instead
      */
-    @Deprecated(since = "2.9.11", forRemoval = true)
     public String downloadUrl() {
         return getValue(NATS_DOWNLOAD_URL);
     }
@@ -360,16 +318,23 @@ public class Nats extends NatsInterface {
         return "nats://" + getValue(ADDR) + ":" + port();
     }
 
+    /**
+     * @return nats configuration
+     */
+    public Map<NatsConfig, String> config() {
+        return configMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().value()));
+    }
+
     protected void setConfigFromNatsOptions(final NatsOptions natsOptions) {
-        addConfig(DV, natsOptions.debug());
-        addConfig(CONFIG, natsOptions.configFile());
-        addConfig(PORT, natsOptions.port());
-        addConfig(JETSTREAM, natsOptions.jetStream());
-        addConfig(NATS_LOG_NAME, ofNullable(natsOptions.logger()).map(Logger::getName).orElse(getValue(NATS_LOG_NAME)));
+        ofNullable(natsOptions.debug()).ifPresent(debug -> addConfig(DV, debug));
+        ofNullable(natsOptions.configFile()).ifPresent(config -> addConfig(CONFIG, config));
+        ofNullable(natsOptions.port()).ifPresent(port -> addConfig(PORT, port));
+        ofNullable(natsOptions.jetStream()).ifPresent(jetstream -> addConfig(JETSTREAM, jetstream));
+        ofNullable(natsOptions.logger()).map(Logger::getName).ifPresent(loggerName -> addConfig(NATS_LOG_NAME, loggerName));
     }
 
     protected void setConfigFromProperties() {
-        getConfigFile().ifPresent(path -> {
+        getPropertyFiles(ofNullable(getValue(NATS_PROPERTY_FILE)).filter(file -> !isEmpty(file)).orElse("nats.properties")).forEach(path -> {
             final Properties prop = new Properties();
             try (final InputStream inputStream = new FileInputStream(path.toFile())) {
                 prop.load(inputStream);
@@ -382,7 +347,7 @@ public class Nats extends NatsInterface {
 
     protected void setDefaultConfig() {
         for (NatsConfig cfg : NatsConfig.values()) {
-            final String value = cfg.value();
+            final String value = cfg.defaultValueStr();
             addConfig(DEFAULT, cfg, value);
         }
         addConfig(DEFAULT, NATS_SYSTEM, NatsUtils.getSystem());
@@ -392,16 +357,6 @@ public class Nats extends NatsInterface {
         for (NatsConfig cfg : NatsConfig.values()) {
             addConfig(ENV, cfg, getEnv(cfg.name().startsWith(NATS_PREFIX) ? cfg.name() : NATS_PREFIX + cfg.name()));
         }
-    }
-
-    protected Optional<Path> getConfigFile() {
-        for (Supplier<Path> supplier : createPathSuppliers(ofNullable(getValue(NATS_CONFIG_FILE)).filter(file -> !isEmpty(file)).orElse("nats.properties"))) {
-            final Path path = supplier.get();
-            if (path != null && Files.exists(path)) {
-                return Optional.of(path);
-            }
-        }
-        return Optional.empty();
     }
 
     protected void addConfig(final NatsConfig key, final Object value) {
@@ -418,7 +373,7 @@ public class Nats extends NatsInterface {
 
     protected int setNextFreePort() {
         if (ofNullable(getValue(PORT, () -> null)).map(Integer::parseInt).orElse(-1) <= 0) {
-            addConfig(configMap.get(PORT).source(), PORT, String.valueOf(getNextFreePort((int) PORT.valueRaw())));
+            addConfig(configMap.get(PORT).source(), PORT, String.valueOf(getNextFreePort((int) PORT.defaultValue())));
         }
         return port();
     }
@@ -455,8 +410,8 @@ public class Nats extends NatsInterface {
                 }
             }
         });
-        command.append(stream(customArgs).collect(Collectors.joining(" ", " ", "")));
-        command.append(stream(getValue(NATS_ARGS, () -> "").split("\\,")).map(String::trim).collect(Collectors.joining(" ", " ", "")));
+        command.append(stream(customArgs()).collect(Collectors.joining(" ", " ", "")));
+        command.append(stream(getValue(NATS_ARGS, () -> "").split(ARGS_SEPARATOR)).map(String::trim).collect(Collectors.joining(" ", " ", "")));
         return command.toString();
     }
 
@@ -464,9 +419,11 @@ public class Nats extends NatsInterface {
         try {
             sendStopSignal();
             waitForShutDown(timeoutMs);
-            terminal.process().destroy();
-            terminal.process().waitFor();
-        } catch (NullPointerException | InterruptedException ignored) {
+            if (terminal.get() != null) {
+                terminal.get().process().destroy();
+                terminal.get().process().waitFor();
+            }
+        } catch (InterruptedException ignored) {
             logger.warning(() -> format("Could not find process to stop [%s]", name));
             Thread.currentThread().interrupt();
         } finally {
@@ -474,6 +431,7 @@ public class Nats extends NatsInterface {
                 waitForPort(port(), timeoutMs, true);
                 logger.info(() -> format("Stopped [%s]", name));
             }
+            terminal.set(null);
         }
         deletePidFile();
     }
@@ -503,6 +461,19 @@ public class Nats extends NatsInterface {
         });
     }
 
+    protected void startProcess(final String command) {
+        terminal.set(new Terminal()
+                .timeoutMs(timeoutMs)
+                .breakOnError(false)
+                .consumerErrorStream(logger::info)
+                .consumerInfoStream(serve -> {
+                    logger.severe(serve);
+                    terminal.set(null);
+                })
+                .execute(command, null)
+        );
+    }
+
     @Override
     public String toString() {
         return "Nats{" +
@@ -510,7 +481,6 @@ public class Nats extends NatsInterface {
                 ", pid='" + pid() + '\'' +
                 ", port=" + port() +
                 ", configs=" + configMap.size() +
-                ", customArgs=" + customArgs.length +
                 '}';
     }
 }

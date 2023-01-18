@@ -4,12 +4,14 @@ import berlin.yuna.natsserver.logic.Nats;
 
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.logging.Level;
 
 public enum NatsConfig {
 
     // Server Options
     ADDR("--addr", "0.0.0.0", String.class, "Bind to host address (default: 0.0.0.0)"),
-    NET("--net", ADDR.defaultValue, ADDR.type, ADDR.description),
+    NET("--net", null, ADDR.type, ADDR.description),
     PORT("--port", 4222, Integer.class, "Use port for clients (default: 4222)"),
     NAME("--name", null, String.class, "Server name (default: auto)"),
     SERVER_NAME("--server_name", NAME.defaultValue, NAME.type, NAME.description),
@@ -24,7 +26,7 @@ public enum NatsConfig {
 
     // Logging Options
     LOG("--log", null, Path.class, "File to redirect log output"),
-    LOG_TIMELOG_TIME("--logtime", true, Boolean.class, "Timestamp log entries (default: true)"),
+    LOG_TIMELOG_TIME("--logtime", null, Boolean.class, "Timestamp log entries (default: true)"),
     SYSLOG("--syslog", false, SilentBoolean.class, "Log to syslog or windows event log" + System.lineSeparator() + "(default: false)"),
     REMOTE_SYSLOG("--remote_syslog", null, String.class, "Syslog server addr (udp://localhost:514)"),
     DEBUG("--debug", false, SilentBoolean.class, "Enable debugging output" + System.lineSeparator() + "(default: false)"),
@@ -32,7 +34,7 @@ public enum NatsConfig {
     VV("-VV ", false, SilentBoolean.class, "Verbose trace (traces system account as well)" + System.lineSeparator() + "(default: false)"),
     DV("-DV ", false, SilentBoolean.class, "Debug and trace" + System.lineSeparator() + "(default: false)"),
     DVV("-DVV ", false, SilentBoolean.class, "Debug and verbose trace (traces system account as well)" + System.lineSeparator() + "(default: false)"),
-    LOG_SIZE_limit("--log_size_limit", null, Integer.class, "Logfile size limit (default: auto)"),
+    LOG_SIZE_LIMIT("--log_size_limit", null, Integer.class, "Logfile size limit (default: auto)"),
     MAX_TRACED_MSG_LEN("--max_traced_msg_len", null, Integer.class, "Maximum printable length for traced messages (default: unlimited)"),
 
     // JetStream Options
@@ -55,7 +57,7 @@ public enum NatsConfig {
     ROUTES("--routes", null, String.class, "Routes to solicit and connect" + System.lineSeparator() + "e.g. rurl-1, rurl-2"),
     CLUSTER("--cluster", null, URL.class, "Cluster URL for solicited routes"),
     CLUSTER_NAME("--cluster_name", null, String.class, "Cluster Name, if not set one will be dynamically generated"),
-    NO_ADVERTISE("--no_advertise", false, Boolean.class, "Do not advertise known cluster information to clients" + System.lineSeparator() + "(default: false)"),
+    NO_ADVERTISE("--no_advertise", null, Boolean.class, "Do not advertise known cluster information to clients" + System.lineSeparator() + "(default: false)"),
     LUSTER_ADVERTISE("--cluster_advertise", null, URL.class, "Cluster URL to advertise to other servers"),
     CONNECT_RETRIES("--connect_retries", null, Integer.class, "For implicit routes, number of connect retries"),
     CLUSTER_LISTEN("--cluster_listen", null, URL.class, "Cluster url from which members can solicit routes"),
@@ -69,6 +71,9 @@ public enum NatsConfig {
     HELP_TLS("--help_tls", false, SilentBoolean.class, "TLS help" + System.lineSeparator() + "(default: false)"),
 
     //WRAPPER configs
+    NATS_AUTOSTART(null, true, Boolean.class, "[true] == auto closable, [false] == manual use `.start()` method (default: true)"),
+    NATS_LOG_LEVEL(null, null, String.class, "java log level e.g. [OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL]"),
+    NATS_TIMEOUT_MS(null, 10000, String.class, "true = auto closable, false manual use `.start()` method"),
     NATS_SYSTEM(null, null, String.class, "suffix for binary path"),
 
     NATS_LOG_NAME(null, Nats.class.getSimpleName(), String.class, "java wrapper name"),
@@ -79,9 +84,16 @@ public enum NatsConfig {
 
     NATS_BINARY_PATH(null, null, Path.class, "Target Path to Nats binary or zip file - auto from " + NATS_DOWNLOAD_URL.name() + ""),
 
-    NATS_CONFIG_FILE(null, null, Path.class, "Additional config file (properties / KV) same as DSL configs"),
+    NATS_PROPERTY_FILE(null, null, Path.class, "Additional config file (properties / KV) same as DSL configs"),
 
-    NATS_ARGS(null, null, String.class, "custom arguments separated by \\, or just space");
+    NATS_ARGS(null, null, String.class, "custom arguments separated by &&");
+
+    public static final String ARGS_SEPARATOR = "&&";
+    public static final Level[] ALL_LOG_LEVEL = new Level[]{Level.OFF, Level.SEVERE, Level.WARNING, Level.INFO, Level.CONFIG, Level.FINE, Level.FINER, Level.FINEST, Level.ALL};
+
+    public static Level logLevelOf(final String level) {
+        return Arrays.stream(ALL_LOG_LEVEL).filter(value -> value.getName().equalsIgnoreCase(level)).findFirst().orElse(null);
+    }
 
     private final String key;
     private final Class<?> type;
@@ -100,18 +112,18 @@ public enum NatsConfig {
     }
 
 
-    public Object valueRaw() {
+    public Object defaultValue() {
         return defaultValue;
     }
 
-    public String desc() {
+    public String description() {
         return description;
     }
 
     /**
      * @return value as string
      */
-    public String value() {
+    public String defaultValueStr() {
         return defaultValue == null ? null : defaultValue.toString();
     }
 
@@ -124,6 +136,11 @@ public enum NatsConfig {
         return key;
     }
 
+    public Class<?> type() {
+        return type;
+    }
+
+    @SuppressWarnings("java:S2094")
     public static class SilentBoolean {
         //DUMMY CLASS
     }

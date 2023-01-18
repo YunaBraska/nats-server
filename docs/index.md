@@ -60,7 +60,7 @@ Nats Server for testing which contains the original [Nats server](https://github
 <dependency>
   <groupId>berlin.yuna</groupId>
   <artifactId>nats-server</artifactId>
-  <version>2.6.12</version>
+  <version>2.9.11</version>
 </dependency>
 ```
 
@@ -80,45 +80,63 @@ Nats Server for testing which contains the original [Nats server](https://github
 
 #### Getter
 
-| Name                                 | Description                                      |
-|--------------------------------------|--------------------------------------------------|
-| binaryFile                           | Path to binary file                              |
-| downloadUrl                          | Download URL                                     |
-| port                                 | port (-1 == not started && random port)          |
-| pid                                  | process id (-1 == not started)                   |
-| pidFile                              | Path to PID file                                 |
-| config                               | Get config map                                   |
-| getValue                             | Get resolved config for a key                    |
-| getConfigFile                        | Get resolved config file if exists               |
-
-#### Setter
-
-| Name                                 | Description                                      |
-|--------------------------------------|--------------------------------------------------|
-| config(key, value)                   | Set specific config value                        |
-| config(Map<key, value>)              | Set config map                                   |
-| config(key, value...)                | Set config array                                 |
+| Name               | Description                               |
+|--------------------|-------------------------------------------|
+| url                | nats server URL from bind to host address |
+| pid                | process id (-1 == not started)            |
+| port               | port (-1 == not started && random port)   |
+| debug              | rue if "DV", "DVV" or "DEBUG" is set      |
+| config             | Get config map                            |
+| binary             | Path to binary file                       |
+| pidFile            | Path to PID file                          |
+| getValue           | Get resolved config for a key             |
+| jetstream          | true if Jetstream is enabled              |
+| configFile         | custom nats config file                   |
+| downloadUrl        | Download URL                              |
+| configPropertyFile | custom property config file               |
 
 #### Others
 
-| Name                                 | Description                                      |
-|--------------------------------------|--------------------------------------------------|
-| start                                | Starts the nats server                           |
-| start(timeout)                       | Starts the nats server with custom timeout       |
-| tryStart()                           | Starts the nats server (mode = RuntimeException) |
-| stop()                               | Stops the nats server                            |
-| stop(timeout)                        | Stops the nats server with custom timeout        |
-| config(Map<key, value>)              | Set config map                                   |
-| config(key, value...)                | Set config array                                 |
+| Name    | Description            |
+|---------|------------------------|
+| start() | Starts the nats server |
+| close() | Stops the nats server  |
 
-### Example
+### Example auto closable
 
 ```java
 public class MyNatsTest {
 
   public static void main(final String[] args) {
-    final Nats nats = new Nats(4222) //-1 for a random port
+    try (final var nats = new Nats()) {
+      //DO SOMETHING...
+    }
+  }
+}
+```
+
+### Example no autostart
+
+```java
+public class MyNatsTest {
+
+  public static void main(final String[] args) {
+    final Nats nats = new Nats(natsConfig().autostart(false).build());
+    nats.start();
+    nats.close();
+  }
+}
+```
+
+### Example with configs
+
+```java
+public class MyNatsTest {
+
+  public static void main(final String[] args) {
+    final Nats nats = new Nats(defaultConfig()
             .config(
+                    PORT, "-1",  //-1 for a random port
                     USER, "my_optional_user",
                     PASS, "my_optional_password",
                     NATS_BINARY_PATH, "optional/ready/to/use/nats/file",
@@ -127,9 +145,8 @@ public class MyNatsTest {
                     NATS_ARGS, "--optionalArg1=123\\,--optionalArg2=456",
                     NATS_VERSION, "v.1.0.0.optional",
                     NATS_SYSTEM, "optional_download_suffix"
-            )
-            .start();
-    nats.stop();
+            ));
+    nats.close();
   }
 }
 ```

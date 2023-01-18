@@ -17,10 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28,6 +25,7 @@ import java.util.stream.Stream;
 
 import static berlin.yuna.clu.logic.SystemUtil.readFile;
 import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
+import static berlin.yuna.natsserver.config.OptionsNats.natsBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
@@ -47,8 +45,8 @@ class NatsConfigComponentTest {
     @DisplayName("Compare nats with java config")
     void compareNatsConfig() throws Exception {
         final String newNatsVersion = updateNatsVersion();
-        Files.deleteIfExists(new Nats().binary());
-        final Nats nats = new Nats(NatsOptionsImpl.builder().port(-1).build().config(NATS_VERSION, newNatsVersion));
+        Files.deleteIfExists(new Nats(natsBuilder().autostart(false).build()).binary());
+        final Nats nats = new Nats(natsBuilder().autostart(false).port(-1).config(NATS_VERSION, newNatsVersion));
         nats.downloadNats();
         final Path natsServerPath = nats.binary();
 
@@ -59,14 +57,14 @@ class NatsConfigComponentTest {
                 && line.length() >= HELP_LINE_DESCRIPTION_INDEX
                 && line.contains("-")
                 && !line.startsWith("                                     ")
-                && stream(NatsConfig.values()).noneMatch(config -> config.desc().contains(line.substring(HELP_LINE_DESCRIPTION_INDEX).trim()))
+                && stream(NatsConfig.values()).noneMatch(config -> config.description().contains(line.substring(HELP_LINE_DESCRIPTION_INDEX).trim()))
         ).toList();
 
         final var removedConfigs = stream(NatsConfig.values()).filter(config -> config.key() != null
                         && console.stream().filter(Objects::nonNull).filter(line -> line.contains("-")).noneMatch(line ->
-                        line.matches(".*" + config.key() + "(?:$|\\n|,|\\s|\\n|\\r).*") && (line.length() < HELP_LINE_DESCRIPTION_INDEX || line.contains(config.desc().split("\\r?\\n")[0]))
+                        line.matches(".*" + config.key() + "(?:$|\\n|,|\\s|\\n|\\r).*") && (line.length() < HELP_LINE_DESCRIPTION_INDEX || line.contains(config.description().split("\\r?\\n")[0]))
                 )
-        ).map(config -> String.format("name[%s] key [%s] desc [%s]", config, config.key(), config.desc())).toList();
+        ).map(config -> String.format("name[%s] key [%s] desc [%s]", config, config.key(), config.description())).toList();
         assertThat("Missing config in java \n [" + nats.binary() + "] \n", missingConfigs, is(empty()));
         assertThat("Config was removed by nats \n [" + nats.binary() + "] \n", removedConfigs, is(empty()));
     }
@@ -90,7 +88,7 @@ class NatsConfigComponentTest {
             final HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
 
-            final String previousVersion = NATS_VERSION.value();
+            final String previousVersion = NATS_VERSION.defaultValueStr();
             final String newVersion = updateNatsVersion(configJavaFile, read(con.getInputStream()));
             if (!requireNonNull(previousVersion).equals(newVersion)) {
                 Files.write(Paths.get(System.getProperty("user.dir"), "version.txt"), (newVersion.startsWith("v") ? newVersion.substring(1) : newVersion).getBytes());
@@ -111,29 +109,6 @@ class NatsConfigComponentTest {
         } else {
             throw new IllegalStateException("Could not update nats server version");
         }
-    }
-
-    private Set<String> getNotMatchingEntities(final List<String> list1, final List<String> list2) {
-        final Set<String> noMatches = new HashSet<>();
-        for (String entity : list1) {
-            if (!entity.equalsIgnoreCase("help")
-                    && !entity.equalsIgnoreCase("version")
-                    && !entity.equalsIgnoreCase("help_tls")
-                    && !list2.contains(entity)) {
-                noMatches.add(entity);
-            }
-        }
-        return noMatches;
-    }
-
-    private List<String> readConfigKeys(final String console) {
-        final List<String> allMatches = new ArrayList<>();
-        final Matcher m = Pattern.compile("(--(?<dd>[a-z_]+))|(-(?<d>[a-z_]+)\\s*[<=])").matcher(console);
-        while (m.find()) {
-            final String group = m.group("dd");
-            allMatches.add((group == null ? m.group("d") : group).toUpperCase());
-        }
-        return allMatches;
     }
 
     public static String read(final InputStream input) throws IOException {
