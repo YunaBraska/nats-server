@@ -64,7 +64,7 @@ public enum NatsConfig {
     //WRAPPER configs
     NATS_SYSTEM(null, "[STRING] suffix for binary path"),
     NATS_LOG_NAME(Nats.class.getSimpleName(), "[STRING] java wrapper name"),
-    NATS_VERSION("v2.9.12", "[STRING] Overwrites Nats server version on path"),
+    NATS_VERSION("v2.9.14", "[STRING] Overwrites Nats server version on path"),
     NATS_DOWNLOAD_URL("https://github.com/nats-io/nats-server/releases/download/%" + NATS_VERSION.name() + "%/nats-server-%" + NATS_VERSION.name() + "%-%" + NATS_SYSTEM.name() + "%.zip", "[STRING] Path to Nats binary or zip file"),
     NATS_BINARY_PATH(null, "[STRING] Target Path to Nats binary or zip file - auto from " + NATS_DOWNLOAD_URL.name() + ""),
     NATS_CONFIG_FILE(null, "[STRING] Additional property file with config value"),
