@@ -1,5 +1,6 @@
 package berlin.yuna.natsserver.config;
 
+import io.nats.commons.NatsOptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +30,7 @@ import static berlin.yuna.natsserver.config.OptionsNats.natsBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,18 +55,18 @@ class NatsConfigComponentTest {
 
         final var console = new ArrayList<String>();
         new Terminal().consumerInfoStream(console::add).consumerErrorStream(console::add).timeoutMs(10000).execute(natsServerPath.toString() + " --help");
-        final var missingConfigs = console.stream().filter(line -> line != null
+        final List<String> missingConfigs = console.stream().filter(line -> line != null
                 && line.length() >= HELP_LINE_DESCRIPTION_INDEX
                 && line.contains("-")
                 && !line.startsWith("                                     ")
                 && stream(NatsConfig.values()).noneMatch(config -> config.description().contains(line.substring(HELP_LINE_DESCRIPTION_INDEX).trim()))
-        ).toList();
+        ).collect(toList());
 
         final var removedConfigs = stream(NatsConfig.values()).filter(config -> config.key() != null
                         && console.stream().filter(Objects::nonNull).filter(line -> line.contains("-")).noneMatch(line ->
                         line.matches(".*" + config.key() + "(?:$|\\n|,|\\s|\\n|\\r).*") && (line.length() < HELP_LINE_DESCRIPTION_INDEX || line.contains(config.description().split("\\r?\\n")[0]))
                 )
-        ).map(config -> String.format("name[%s] key [%s] desc [%s]", config, config.key(), config.description())).toList();
+        ).map(config -> String.format("name[%s] key [%s] desc [%s]", config, config.key(), config.description())).collect(toList());
         assertThat("Missing config in java \n [" + nats.binary() + "] \n", missingConfigs, is(empty()));
         assertThat("Config was removed by nats \n [" + nats.binary() + "] \n", removedConfigs, is(empty()));
     }

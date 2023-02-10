@@ -1,9 +1,10 @@
-package berlin.yuna.natsserver.config;
+package io.nats.commons;
 
 import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+//Coming soon from nats
 public interface NatsInterface extends AutoCloseable {
 
     Process process();

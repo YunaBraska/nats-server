@@ -1,5 +1,7 @@
 package berlin.yuna.natsserver.config;
 
+import io.nats.commons.NatsOptions;
+
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.Map;

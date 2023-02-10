@@ -1,7 +1,7 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
-import berlin.yuna.natsserver.config.NatsInterface;
+import io.nats.commons.NatsInterface;
 import berlin.yuna.natsserver.config.NatsOptionsBuilder;
 import berlin.yuna.natsserver.config.OptionsNats;
 import org.junit.jupiter.api.AfterEach;

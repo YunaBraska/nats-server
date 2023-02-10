@@ -5,6 +5,7 @@ import berlin.yuna.natsserver.logic.Nats;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 public enum NatsConfig {
@@ -141,7 +142,7 @@ public enum NatsConfig {
     }
 
     @SuppressWarnings("java:S2094")
-    public static class SilentBoolean {
+    public static class SilentBoolean extends AtomicBoolean {
         //DUMMY CLASS
     }
 }

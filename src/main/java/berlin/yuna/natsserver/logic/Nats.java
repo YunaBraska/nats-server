@@ -3,8 +3,8 @@ package berlin.yuna.natsserver.logic;
 import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsConfig;
-import berlin.yuna.natsserver.config.NatsInterface;
-import berlin.yuna.natsserver.config.NatsOptions;
+import io.nats.commons.NatsInterface;
+import io.nats.commons.NatsOptions;
 import berlin.yuna.natsserver.config.NatsOptionsBuilder;
 import berlin.yuna.natsserver.config.OptionsNats;
 import berlin.yuna.natsserver.model.MapValue;
@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import static berlin.yuna.clu.logic.SystemUtil.OS;
 import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
 import static berlin.yuna.natsserver.config.NatsConfig.*;
+import static berlin.yuna.natsserver.config.OptionsNats.natsBuilder;
 import static berlin.yuna.natsserver.logic.NatsUtils.*;
 import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
 import static berlin.yuna.natsserver.model.ValueSource.DEFAULT;
@@ -82,7 +83,7 @@ public class Nats implements NatsInterface {
      * {@link PortUnreachableException} if {@link Nats} is not starting cause port is not free  <br />
      */
     public Nats() {
-        this(OptionsNats.natsBuilder().autostart(true).build());
+        this(natsBuilder().autostart(true).build());
     }
 
     /**
@@ -96,7 +97,7 @@ public class Nats implements NatsInterface {
      * @param port the port to start on or &lt;=0 to use an automatically allocated port
      */
     public Nats(final int port) {
-        this(OptionsNats.natsBuilder().port(port).build());
+        this(natsBuilder().port(port).build());
     }
 
     /**
@@ -126,8 +127,10 @@ public class Nats implements NatsInterface {
     public Nats(final NatsOptions natsOptions) {
         Runtime.getRuntime().addShutdownHook(new Thread(this::close));
         final var timeoutMsTmp = new AtomicLong(-1);
-        final OptionsNats options = natsOptions instanceof OptionsNats optionsNats ? optionsNats : null;
-        ofNullable(options).ifPresent(o -> o.config().forEach(this::addConfig));
+        if(natsOptions instanceof OptionsNats){
+            final OptionsNats options = (OptionsNats) natsOptions;
+            ofNullable(options).ifPresent(o -> o.config().forEach(this::addConfig));
+        }
         setDefaultConfig();
         setEnvConfig();
         setConfigFromProperties();
