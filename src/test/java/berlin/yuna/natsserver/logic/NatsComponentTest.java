@@ -139,7 +139,7 @@ class NatsComponentTest {
     @Test
     @DisplayName("Stop without start will be ignored")
     void natsServer_stopWithoutStart_shouldNotRunIntroException() {
-        final var nats = new Nats(NatsOptions.natsBuilder().autostart(false).build());
+        final var nats = NatsOptions.natsBuilder().autostart(false).nats();
         nats.close();
         assertThat(nats.pid(), is(-1));
     }

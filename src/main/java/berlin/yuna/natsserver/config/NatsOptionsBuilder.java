@@ -1,5 +1,7 @@
 package berlin.yuna.natsserver.config;
 
+import berlin.yuna.natsserver.logic.Nats;
+
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.Map;
@@ -15,13 +17,23 @@ import static java.util.Optional.ofNullable;
 public class NatsOptionsBuilder {
 
     protected Logger logger;
-    private Map<NatsConfig, String> configMap = new EnumMap<>(NatsConfig.class);
+    protected Map<NatsConfig, String> configMap = new EnumMap<>(NatsConfig.class);
 
     protected NatsOptionsBuilder() {
     }
 
+    /**
+     * @return immutable config for {@link Nats}
+     */
     public NatsOptions build() {
         return new NatsOptions(logger, configMap);
+    }
+
+    /**
+     * @return {@link Nats} build nats server from config
+     */
+    public Nats nats() {
+        return new Nats(this);
     }
 
     /**
