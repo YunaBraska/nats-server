@@ -2,7 +2,7 @@ package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
 import berlin.yuna.natsserver.config.NatsOptionsBuilder;
-import berlin.yuna.natsserver.config.OptionsNats;
+import berlin.yuna.natsserver.config.NatsOptions;
 import berlin.yuna.natsserver.model.exception.NatsDownloadException;
 import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
 import berlin.yuna.natsserver.model.exception.NatsStartException;
@@ -21,20 +21,20 @@ import static berlin.yuna.natsserver.config.NatsConfig.JETSTREAM;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.PROFILE;
 import static berlin.yuna.natsserver.config.NatsConfig.TRACE;
-import static berlin.yuna.natsserver.config.OptionsNats.natsBuilder;
+import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
 import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
 import static berlin.yuna.natsserver.model.ValueSource.ENV;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("UnitTest")
 @DisplayName("NatsServer plain java")
+@SuppressWarnings("resource")
 class NatsComponentTest {
 
     @Test
@@ -127,7 +127,7 @@ class NatsComponentTest {
     @Test
     @DisplayName("Duplicate instances [FAIL]")
     void natsServer_asTwoInstances_shouldThrowBindException() {
-        final OptionsNats config = natsBuilder().port(4500).timeoutMs(2000).build();
+        final NatsOptions config = natsBuilder().port(4500).timeoutMs(2000).build();
         new Nats(config);
         assertThrows(
                 NatsStartException.class,
@@ -139,7 +139,7 @@ class NatsComponentTest {
     @Test
     @DisplayName("Stop without start will be ignored")
     void natsServer_stopWithoutStart_shouldNotRunIntroException() {
-        final var nats = new Nats(OptionsNats.natsBuilder().autostart(false).build());
+        final var nats = new Nats(NatsOptions.natsBuilder().autostart(false).build());
         nats.close();
         assertThat(nats.pid(), is(-1));
     }

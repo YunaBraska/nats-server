@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 import static berlin.yuna.clu.logic.SystemUtil.readFile;
 import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
-import static berlin.yuna.natsserver.config.OptionsNats.natsBuilder;
+import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.empty;
 
 @Tag("IntegrationTest")
 @DisplayName("NatsServer ConfigTest")
+@SuppressWarnings("resource")
 class NatsConfigComponentTest {
 
     public static final Pattern RELEASE_PATTERN = Pattern.compile("\"tag_name\":\"(?<version>.*?)\"");

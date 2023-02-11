@@ -3,13 +3,12 @@ package berlin.yuna.natsserver.logic;
 import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsConfig;
-import io.nats.commons.NatsInterface;
-import io.nats.commons.NatsOptions;
+import berlin.yuna.natsserver.config.NatsOptions;
 import berlin.yuna.natsserver.config.NatsOptionsBuilder;
-import berlin.yuna.natsserver.config.OptionsNats;
 import berlin.yuna.natsserver.model.MapValue;
 import berlin.yuna.natsserver.model.ValueSource;
 import berlin.yuna.natsserver.model.exception.NatsStartException;
+import io.nats.commons.NatsInterface;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -22,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +34,7 @@ import java.util.stream.Collectors;
 import static berlin.yuna.clu.logic.SystemUtil.OS;
 import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
 import static berlin.yuna.natsserver.config.NatsConfig.*;
-import static berlin.yuna.natsserver.config.OptionsNats.natsBuilder;
+import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
 import static berlin.yuna.natsserver.logic.NatsUtils.*;
 import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
 import static berlin.yuna.natsserver.model.ValueSource.DEFAULT;
@@ -124,12 +122,11 @@ public class Nats implements NatsInterface {
      *
      * @param natsOptions nats options
      */
-    public Nats(final NatsOptions natsOptions) {
+    public Nats(final io.nats.commons.NatsOptions natsOptions) {
         Runtime.getRuntime().addShutdownHook(new Thread(this::close));
         final var timeoutMsTmp = new AtomicLong(-1);
-        if(natsOptions instanceof OptionsNats){
-            final OptionsNats options = (OptionsNats) natsOptions;
-            ofNullable(options).ifPresent(o -> o.config().forEach(this::addConfig));
+        if (natsOptions instanceof NatsOptions) {
+            ((NatsOptions) natsOptions).config().forEach(this::addConfig);
         }
         setDefaultConfig();
         setEnvConfig();
@@ -240,7 +237,7 @@ public class Nats implements NatsInterface {
      */
     @Override
     public Path configFile() {
-        return ofNullable(getValue(CONFIG, () -> null)).filter(Objects::nonNull).map(Path::of).orElse(null);
+        return ofNullable(getValue(CONFIG, () -> null)).map(Path::of).orElse(null);
     }
 
     /**
@@ -248,7 +245,7 @@ public class Nats implements NatsInterface {
      * see {@link NatsConfig#NATS_PROPERTY_FILE}
      */
     public Path configPropertyFile() {
-        return ofNullable(getValue(NATS_PROPERTY_FILE, () -> null)).filter(Objects::nonNull).map(Path::of).orElse(null);
+        return ofNullable(getValue(NATS_PROPERTY_FILE, () -> null)).map(Path::of).orElse(null);
     }
 
     @Override
@@ -328,7 +325,7 @@ public class Nats implements NatsInterface {
         return configMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().value()));
     }
 
-    protected void setConfigFromNatsOptions(final NatsOptions natsOptions) {
+    protected void setConfigFromNatsOptions(final io.nats.commons.NatsOptions natsOptions) {
         ofNullable(natsOptions.debug()).ifPresent(debug -> addConfig(DV, debug));
         ofNullable(natsOptions.configFile()).ifPresent(config -> addConfig(CONFIG, config));
         ofNullable(natsOptions.port()).ifPresent(port -> addConfig(PORT, port));
@@ -337,7 +334,7 @@ public class Nats implements NatsInterface {
     }
 
     protected void setConfigFromProperties() {
-        getPropertyFiles(ofNullable(getValue(NATS_PROPERTY_FILE)).filter(file -> !isEmpty(file)).orElse("nats.properties")).forEach(path -> {
+        getPropertyFiles(ofNullable(getValue(NATS_PROPERTY_FILE)).filter(NatsUtils::isNotEmpty).orElse("nats.properties")).forEach(path -> {
             final Properties prop = new Properties();
             try (final InputStream inputStream = new FileInputStream(path.toFile())) {
                 prop.load(inputStream);
@@ -389,6 +386,7 @@ public class Nats implements NatsInterface {
             final URL source = new URL(getValue(NATS_DOWNLOAD_URL));
             unzip(download(source, Paths.get(binary().toString() + ".zip")), binaryPath);
         }
+        //noinspection ResultOfMethodCallIgnored
         binaryPath.toFile().setExecutable(true);
         SystemUtil.setFilePermissions(binaryPath, OWNER_EXECUTE, OTHERS_EXECUTE, OWNER_READ, OTHERS_READ, OWNER_WRITE, OTHERS_WRITE);
         return binaryPath;
@@ -402,7 +400,7 @@ public class Nats implements NatsInterface {
         addConfig(DSL, PID, pidFile().toString());
         command.append(binary().toString());
         configMap.forEach((key, mapValue) -> {
-            if (!key.name().startsWith(NATS_PREFIX) && mapValue != null && !isEmpty(mapValue.value())) {
+            if (!key.name().startsWith(NATS_PREFIX) && mapValue != null && isNotEmpty(mapValue.value())) {
                 if (key.isWritableValue() || !"false".equals(mapValue.value())) {
                     command.append(" ");
                     command.append(key.key());

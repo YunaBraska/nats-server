@@ -140,8 +140,8 @@ public class NatsUtils {
         }
     }
 
-    public static boolean isEmpty(final String string) {
-        return string == null || string.trim().length() == 0;
+    public static boolean isNotEmpty(final String string) {
+        return string != null && !string.isEmpty() && !string.isBlank();
     }
 
     private static String envValue(final String key, final Map<NatsConfig, MapValue> config) {

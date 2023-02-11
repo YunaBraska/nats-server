@@ -1,7 +1,5 @@
 package berlin.yuna.natsserver.config;
 
-import io.nats.commons.NatsOptions;
-
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.Map;
@@ -14,12 +12,13 @@ import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValue;
 import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValueB;
 import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValueI;
 
-public class OptionsNats implements NatsOptions {
+@SuppressWarnings("java:S2176")
+public class NatsOptions implements io.nats.commons.NatsOptions {
 
     protected final Logger logger;
     protected final Map<NatsConfig, String> config;
 
-    public OptionsNats(final Logger logger, final Map<NatsConfig, String> config) {
+    public NatsOptions(final Logger logger, final Map<NatsConfig, String> config) {
         this.logger = logger;
         this.config = config == null ? new EnumMap<>(NatsConfig.class) : new EnumMap<>(config);
     }
@@ -101,7 +100,7 @@ public class OptionsNats implements NatsOptions {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final OptionsNats that = (OptionsNats) o;
+        final NatsOptions that = (NatsOptions) o;
         return Objects.equals(logger, that.logger) && Objects.equals(config, that.config);
     }
 

@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import static berlin.yuna.natsserver.config.NatsConfig.ARGS_SEPARATOR;
 import static java.util.Optional.ofNullable;
 
+@SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
 public class NatsOptionsBuilder {
 
     protected Logger logger;
@@ -19,8 +20,8 @@ public class NatsOptionsBuilder {
     protected NatsOptionsBuilder() {
     }
 
-    public OptionsNats build() {
-        return new OptionsNats(logger, configMap);
+    public NatsOptions build() {
+        return new NatsOptions(logger, configMap);
     }
 
     /**

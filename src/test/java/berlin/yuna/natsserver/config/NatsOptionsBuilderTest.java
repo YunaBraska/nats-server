@@ -1,6 +1,5 @@
 package berlin.yuna.natsserver.config;
 
-import io.nats.commons.NatsOptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,8 +21,8 @@ class NatsOptionsBuilderTest {
     @Test
     @DisplayName("Empty Builder Test")
     void testEmptyBuilder() {
-        final OptionsNats optionsNats = OptionsNats.natsBuilder().build();
-        stream(NatsConfig.values()).forEach(key -> assertThat(optionsNats.config().get(key), is(nullValue())));
+        final NatsOptions natsOptions = NatsOptions.natsBuilder().build();
+        stream(NatsConfig.values()).forEach(key -> assertThat(natsOptions.config().get(key), is(nullValue())));
     }
 
     @Test
@@ -32,7 +31,7 @@ class NatsOptionsBuilderTest {
         final int port = 1234;
         final var logLevel = Level.FINE;
         final var timeoutMs = 123456L;
-        final var options = OptionsNats.natsBuilder();
+        final var options = NatsOptions.natsBuilder();
         final var configFile = Path.of("AA/BB");
         final var customArgs = new String[]{"CC", "DD"};
 
@@ -127,7 +126,7 @@ class NatsOptionsBuilderTest {
 
         //OPTIONS INTERFACE
         assertThat(options.configMap().size(), is(10));
-        final var interFace = (NatsOptions) options.build();
+        final var interFace = (io.nats.commons.NatsOptions) options.build();
 
         assertThat(interFace.port(), is(equalTo(port)));
         assertThat(interFace.jetStream(), is(equalTo(true)));
@@ -141,8 +140,8 @@ class NatsOptionsBuilderTest {
     @Test
     @DisplayName("Coverage Test")
     void coverageTest() {
-        final var builder1 = OptionsNats.natsBuilder().logger(Logger.getLogger("AA"));
-        final var builder2 = OptionsNats.natsBuilder().logger(Logger.getLogger("BB"));
+        final var builder1 = NatsOptions.natsBuilder().logger(Logger.getLogger("AA"));
+        final var builder2 = NatsOptions.natsBuilder().logger(Logger.getLogger("BB"));
         assertThat(builder1, is(equalTo(builder1)));
         assertThat(builder1, is(not(equalTo(builder2))));
         assertThat(builder1.hashCode(), is(not(0)));

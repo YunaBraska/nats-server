@@ -1,9 +1,9 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
-import io.nats.commons.NatsInterface;
+import berlin.yuna.natsserver.config.NatsOptions;
 import berlin.yuna.natsserver.config.NatsOptionsBuilder;
-import berlin.yuna.natsserver.config.OptionsNats;
+import io.nats.commons.NatsInterface;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,9 +30,9 @@ import static berlin.yuna.natsserver.config.NatsConfig.NATS_PROPERTY_FILE;
 import static berlin.yuna.natsserver.config.NatsConfig.NATS_SYSTEM;
 import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
+import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
 import static berlin.yuna.natsserver.logic.Nats.NATS_PREFIX;
 import static berlin.yuna.natsserver.logic.NatsUtils.getSystem;
-import static berlin.yuna.natsserver.config.OptionsNats.natsBuilder;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -49,6 +49,7 @@ import static org.hamcrest.io.FileMatchers.anExistingFile;
 
 @Tag("UnitTest")
 @DisplayName("Nats config test")
+@SuppressWarnings("resource")
 class NatsConfigTest {
 
     private static final String CUSTOM_LOG_NAME = "my_nats_name";
@@ -234,7 +235,7 @@ class NatsConfigTest {
     @Test
     @DisplayName("Constructor with customArgs")
     void constructor_customArgs() {
-        final Nats nats = new Nats(noAutostartBuilder().addArgs(new String[]{"--arg1=false", "--arg2=true"}).build());
+        final Nats nats = new Nats(noAutostartBuilder().addArgs("--arg1=false", "--arg2=true").build());
         assertThat(asList(nats.customArgs()), hasItems("--arg1=false", "--arg2=true"));
         assertThat(nats.prepareCommand(), containsString("--arg1=false --arg2=true"));
     }
@@ -303,7 +304,7 @@ class NatsConfigTest {
         }
     }
 
-    private OptionsNats noAutostart() {
+    private NatsOptions noAutostart() {
         return natsBuilder().autostart(false).build();
     }
 

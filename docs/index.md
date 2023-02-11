@@ -74,7 +74,7 @@ Nats Server for testing which contains the original [Nats server](https://github
 4) Environment Variables (*1)
 5) Default Config
 
-* *1 configs must start with "NATS_" and the additional option from [NatsConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java))*
+* *1 configs must start with "NATS_" and the additional option from [NatsConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java)*
 
 ### Common methods
 
