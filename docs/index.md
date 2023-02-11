@@ -98,20 +98,20 @@ public class MyNatsTest {
 public class MyNatsTest {
 
   public static void main(final String[] args) {
-    final Nats nats = new Nats(natsConfig().autostart(false).build());
+    final Nats nats = natsBuilder().autostart(false).nats();
     nats.start();
     nats.close();
   }
 }
 ```
 
-#### Example with configs
+#### Example with configs (String[])
 
 ```java
 public class MyNatsTest {
 
   public static void main(final String[] args) {
-    final Nats nats = new Nats(defaultConfig()
+    final Nats nats = natsBuilder()
             .config(
                     PORT, "-1",  //-1 for a random port
                     USER, "my_optional_user",
@@ -122,7 +122,7 @@ public class MyNatsTest {
                     NATS_ARGS, "--optionalArg1=123\\,--optionalArg2=456",
                     NATS_VERSION, "v.1.0.0.optional",
                     NATS_SYSTEM, "optional_download_suffix"
-            ));
+            ).nats();
     nats.close();
   }
 }
@@ -138,7 +138,8 @@ public class MyNatsTest {
 public class MyNatsTest {
 
     public static void main(final String[] args) {
-        final Nats nats = new Nats(4222) //-1 means random port
+        final Nats nats = natsBuilder()
+                .config(PORT, "4222")
                 .config(USER, "my_optional_user")
                 .config(PASS, "my_optional_password")
                 .config(NATS_BINARY_PATH, "optional/ready/to/use/nats/file")
@@ -147,7 +148,7 @@ public class MyNatsTest {
                 .config(NATS_ARGS, "--optionalArg1=123\\,--optionalArg2=456")
                 .config(NATS_STREAMING_VERSION, "v.1.0.0.optional")
                 .config(NATS_SYSTEM, "optional_download_suffix")
-                .start();
+                .nats();
         nats.stop();
     }
 }
