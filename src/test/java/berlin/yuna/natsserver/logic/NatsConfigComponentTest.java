@@ -30,6 +30,7 @@ import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -90,6 +91,15 @@ class NatsConfigComponentTest {
             final URL url = new URL("https://api.github.com/repos/nats-io/nats-server/releases/latest");
             final HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
+            con.setRequestProperty("Accept", "application/vnd.github+json");
+            con.setRequestProperty("User-Agent", "MyGitHubClient");
+            ofNullable(System.getProperty("GITHUB_TOKEN", System.getenv("GITHUB_TOKEN")))
+                    .or(() -> ofNullable(System.getProperty("CI_TOKEN", System.getenv("CI_TOKEN"))))
+                    .or(() -> ofNullable(System.getProperty("CI_TOKEN_WORKFLOW", System.getenv("CI_TOKEN_WORKFLOW"))))
+                    .ifPresent(token -> {
+                        System.out.println("Connect to github API with token authorization");
+                        con.setRequestProperty("Authorization", "Token " + token);
+                    });
 
             final String previousVersion = NATS_VERSION.defaultValueStr();
             final String newVersion = updateNatsVersion(configJavaFile, read(con.getInputStream()));
