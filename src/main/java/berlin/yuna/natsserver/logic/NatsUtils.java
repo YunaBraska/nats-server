@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -28,6 +28,7 @@ import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH;
 import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH_TYPE;
 import static java.nio.channels.Channels.newChannel;
 import static java.util.Comparator.comparingLong;
+import static java.util.Optional.ofNullable;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class NatsUtils {
@@ -40,8 +41,11 @@ public class NatsUtils {
     }
 
     public static String getEnv(final String key, final Supplier<String> fallback) {
-        return Optional.ofNullable(System.getProperty(key.toLowerCase()))
-                .orElseGet(() -> Optional.ofNullable(System.getProperty(key.toUpperCase())).orElseGet(fallback));
+        return ofNullable(System.getProperty(key.toLowerCase()))
+                .or(() -> ofNullable(System.getProperty(key.toUpperCase())))
+                .or(() -> ofNullable(System.getenv(key.toLowerCase())))
+                .or(() -> ofNullable(System.getenv(key.toUpperCase())))
+                .orElseGet(fallback);
     }
 
     public static String resolveEnvs(final String input, final Map<NatsConfig, MapValue> config) {
@@ -84,18 +88,24 @@ public class NatsUtils {
         return target;
     }
 
-    public static void validatePort(final int port, final long timeoutMs, final boolean untilFree, final Supplier<Exception> onFail) throws Exception {
-        if (!waitForPort(port, timeoutMs, untilFree)) {
+    public static void validatePort(final int port, final long timeoutMs, final boolean untilFree, final Supplier<Exception> onFail, final BooleanSupplier disrupt) throws Exception {
+        if (!waitForPort(port, timeoutMs, untilFree, disrupt)) {
             throw onFail.get();
         }
     }
 
     public static boolean waitForPort(final int port, final long timeoutMs, final boolean isFree) {
+        return waitForPort(port, timeoutMs, isFree, () -> false);
+    }
+
+    public static boolean waitForPort(final int port, final long timeoutMs, final boolean isFree, final BooleanSupplier disrupt) {
         final long start = System.currentTimeMillis();
 
         while (System.currentTimeMillis() - start < timeoutMs) {
             if (isPortAvailable(port) == isFree) {
                 return true;
+            } else if (disrupt.getAsBoolean()) {
+                return false;
             }
             Thread.yield();
         }
@@ -106,7 +116,7 @@ public class NatsUtils {
         try {
             new Socket("localhost", port).close();
             return false;
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             return true;
         }
     }
@@ -130,13 +140,12 @@ public class NatsUtils {
         }
     }
 
-    public static boolean isEmpty(final String string) {
-        return string == null || string.trim().length() == 0;
+    public static boolean isNotEmpty(final String string) {
+        return string != null && !string.isEmpty() && !string.isBlank();
     }
 
     private static String envValue(final String key, final Map<NatsConfig, MapValue> config) {
-        return Optional
-                .ofNullable(config.get(NatsConfig.valueOf(key)))
+        return ofNullable(config.get(NatsConfig.valueOf(key)))
                 .map(MapValue::value)
                 .orElseGet(() -> getEnv(key, () -> ""));
     }
@@ -149,18 +158,16 @@ public class NatsUtils {
         return string;
     }
 
-    public static List<Supplier<Path>> createPathSuppliers(final String pathString) {
-        final List<Supplier<Path>> suppliers = new ArrayList<>();
-        suppliers.add(() -> Paths.get(pathString));
-        suppliers.add(() -> {
-            try (final Stream<Path> walk = Files.walk(Paths.get(System.getProperty("user.dir")))) {
-                return walk.filter(Files::isRegularFile).filter(path -> path.getFileName().toString().equals(pathString)).findFirst().orElse(null);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        });
-        return suppliers;
+    public static List<Path> getPropertyFiles(final String fileName) {
+        final List<Path> result = new ArrayList<>();
+        final var filePath = ofNullable(fileName).map(Path::of).filter(Files::isRegularFile).orElse(null);
+        try (final Stream<Path> walk = Files.walk(Paths.get(System.getProperty("user.dir")))) {
+            walk.filter(Files::isRegularFile).filter(path -> (filePath != null && filePath.equals(path)) ||
+                    (path.getFileName().toString().equals(fileName) || path.getFileName().toString().equals("nats.properties"))
+            ).forEach(result::add);
+        } catch (IOException ignored) {
+        }
+        return result;
     }
 
     private static String osString(final Enum<?> input, final String prefix) {
