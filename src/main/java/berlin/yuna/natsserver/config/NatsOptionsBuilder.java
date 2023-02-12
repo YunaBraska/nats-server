@@ -1,6 +1,7 @@
 package berlin.yuna.natsserver.config;
 
 import berlin.yuna.natsserver.logic.Nats;
+import berlin.yuna.natsserver.logic.NatsUtils;
 
 import java.nio.file.Path;
 import java.util.EnumMap;
@@ -50,7 +51,10 @@ public class NatsOptionsBuilder {
      * @see NatsConfig#NATS_VERSION
      */
     public NatsOptionsBuilder version(final String version) {
-        configMap.put(NatsConfig.NATS_VERSION, ofNullable(version).map(v -> v.toLowerCase().startsWith("v") ? v : "v" + v).orElse(null));
+        configMap.put(
+                NatsConfig.NATS_VERSION,
+                ofNullable(version).filter(NatsUtils::isNotEmpty).map(v -> v.toLowerCase().startsWith("v") ? v : "v" + v).orElse(null)
+        );
         return this;
     }
 
