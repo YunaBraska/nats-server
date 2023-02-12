@@ -1,5 +1,7 @@
 package berlin.yuna.natsserver.config;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -16,7 +18,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Optional.ofNullable;
 
-
+@Tag("UnitTest")
+@DisplayName("Nats Version Generator")
 class NatsVersionTest {
 
     @Test

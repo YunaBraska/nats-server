@@ -1,6 +1,7 @@
 package berlin.yuna.natsserver.config;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -16,6 +17,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Tag("UnitTest")
+@DisplayName("NatsServer Builder Test")
 class NatsOptionsBuilderTest {
 
     @Test
