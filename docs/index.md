@@ -16,7 +16,7 @@ Nats Server for testing which contains the original [Nats](https://github.com/na
     * [Java-Nats-Server](#java-nats-example)
     * [Java-Nats-Server (JUnit)](#java-nats-junit-example)
     * [Java-Nats-Server (Spring)](#java-nats-spring-example)
-    * [Java-Nats-Streaming-Server](#java-nats-streaming-example)
+    * [Java-Nats-Streaming-Server](#java-nats-example)
       *([deprecation-notice](https://github.com/nats-io/nats-streaming-server#warning--deprecation-notice-warning))*
     * [Java-Nats-Streaming-Server (Spring)](#java-nats-streaming-example)
       *([deprecation-notice](https://github.com/nats-io/nats-streaming-server#warning--deprecation-notice-warning))*
@@ -57,7 +57,8 @@ Nats Server for testing which contains the original [Nats](https://github.com/na
 | url                | nats server URL from bind to host address |
 | pid                | process id (-1 == not started)            |
 | port               | port (-1 == not started && random port)   |
-| debug              | rue if "DV", "DVV" or "DEBUG" is set      |
+| debug              | true if "DV", "DVV" or "DEBUG" is set     |
+| version            | version of nats server                    |
 | config             | Get config map                            |
 | binary             | Path to binary file                       |
 | pidFile            | Path to PID file                          |
@@ -66,7 +67,6 @@ Nats Server for testing which contains the original [Nats](https://github.com/na
 | configFile         | custom nats config file                   |
 | downloadUrl        | Download URL                              |
 | configPropertyFile | custom property config file               |
-
 
 #### Others
 
@@ -77,79 +77,58 @@ Nats Server for testing which contains the original [Nats](https://github.com/na
 
 ### Java Nats Example
 
-[!["MVN Central"](https://img.shields.io/maven-central/v/berlin.yuna/nats-server?style=flat-square '"MVN Central"')](https://search.maven.org/artifact/berlin.yuna/nats-server) [!["Latest Change"](https://img.shields.io/github/last-commit/YunaBraska/nats-server?style=flat-square '"Latest Change"')](https://github.com/YunaBraska/nats-server/commits)
+* Java
+  Nats: [!["MVN Central"](https://img.shields.io/maven-central/v/berlin.yuna/nats-server?style=flat-square '"MVN Central"')](https://search.maven.org/artifact/berlin.yuna/nats-server) [!["Latest Change"](https://img.shields.io/github/last-commit/YunaBraska/nats-server?style=flat-square '"Latest Change"')](https://github.com/YunaBraska/nats-server/commits)
+* Java Streaming
+  Nats: [!["MVN Central"](https://img.shields.io/maven-central/v/berlin.yuna/nats-streaming-server?style=flat-square '"MVN Central"')](https://search.maven.org/artifact/berlin.yuna/nats-streaming-server) [!["Latest Change"](https://img.shields.io/github/last-commit/YunaBraska/nats-server?style=flat-square '"Latest Change"')](https://github.com/YunaBraska/nats-server/commits)
+    * **[Deprecation Notice](https://github.com/nats-io/nats-streaming-server#warning--deprecation-notice-warning)**
 
 #### Example auto closable
 
 ```java
 public class MyNatsTest {
 
-  public static void main(final String[] args) {
-    try (final var nats = new Nats()) {
-      //DO SOMETHING...
+    public static void main(final String[] args) {
+        try (final var nats = new Nats()) {
+            //DO SOMETHING...
+        }
     }
-  }
 }
 ```
 
-#### Example no autostart
+#### Example with diverse configs
 
-```java
-public class MyNatsTest {
-
-  public static void main(final String[] args) {
-    final Nats nats = natsBuilder().autostart(false).nats();
-    nats.start();
-    nats.close();
-  }
-}
-```
-
-#### Example with configs (String[])
-
-```java
-public class MyNatsTest {
-
-  public static void main(final String[] args) {
-    final Nats nats = natsBuilder()
-            .config(
-                    PORT, "-1",  //-1 for a random port
-                    USER, "my_optional_user",
-                    PASS, "my_optional_password",
-                    NATS_BINARY_PATH, "optional/ready/to/use/nats/file",
-                    NATS_DOWNLOAD_URL, "optional/nats/download/url",
-                    NATS_CONFIG_FILE, "optional/config/file",
-                    NATS_ARGS, "--optionalArg1=123\\,--optionalArg2=456",
-                    NATS_VERSION, "v.1.0.0.optional",
-                    NATS_SYSTEM, "optional_download_suffix"
-            ).nats();
-    nats.close();
-  }
-}
-```
-
-### Java Nats Streaming Example
-
-[!["MVN Central"](https://img.shields.io/maven-central/v/berlin.yuna/nats-streaming-server?style=flat-square '"MVN Central"')](https://search.maven.org/artifact/berlin.yuna/nats-streaming-server) [!["Latest Change"](https://img.shields.io/github/last-commit/YunaBraska/nats-streaming-server?style=flat-square '"Latest Change"')](https://github.com/YunaBraska/nats-streaming-server/commits)
-
-**[Deprecation Notice](https://github.com/nats-io/nats-streaming-server#warning--deprecation-notice-warning)**
+* *Nats has more than 50 configs are available*
+* *NatsStreaming has more than 90 configs are available*
+* *Nats Steaming: classes and methods uses suffix `Streaming` e.g. `NatsStreaming`*
 
 ```java
 public class MyNatsTest {
 
     public static void main(final String[] args) {
         final Nats nats = natsBuilder()
-                .config(PORT, "4222")
+                .port(-1)
+                .debug(false)
+                .jetStream(true)
+                .autostart(true)
+                .timeoutMs(10000)
+                .version("3.0.0")
+                .version(NatsVersion.V3_0_0)
+                .configFile("/etc/usr/nats/nats.cfg")
+                .configPropertyFile("/etc/usr/nats/nats.properties")
+                .customArgs("--optionalArg1=123", "--optionalArg2=456")
+                .logger(Logger.getLogger("MyCustomLogger"))
+                .logLevel(System.Logger.Level.DEBUG)
                 .config(USER, "my_optional_user")
                 .config(PASS, "my_optional_password")
-                .config(NATS_BINARY_PATH, "optional/ready/to/use/nats/file")
-                .config(NATS_DOWNLOAD_URL, "optional/nats/download/url")
-                .config(NATS_CONFIG_FILE, "optional/config/file")
-                .config(NATS_ARGS, "--optionalArg1=123\\,--optionalArg2=456")
-                .config(NATS_STREAMING_VERSION, "v.1.0.0.optional")
-                .config(NATS_SYSTEM, "optional_download_suffix")
-                .nats();
-        nats.stop();
+                .config(
+                        NATS_BINARY_PATH.toString(), "optional/ready/to/use/nats/file",
+                        NATS_DOWNLOAD_URL.toString(), "optional/nats/download/url",
+                        NATS_CONFIG_FILE.toString(), "optional/config/file",
+                        NATS_ARGS.toString(), "--optionalArg1=123 && --optionalArg2=456",
+                        NATS_SYSTEM.toString(), "optional_download_suffix"
+                ).nats();
+        nats.close();
     }
 }
 ```
@@ -167,6 +146,7 @@ public class MyNatsTest {
         port = 4680,
         keepAlive = true,
         timeoutMs = 10000,
+        version = "3.0.0",
         configFile = "my.properties",
         downloadUrl = "https://example.com",
         binaryFile = "/tmp/natsserver",
