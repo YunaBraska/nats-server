@@ -17,8 +17,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -27,10 +30,12 @@ import java.util.stream.Stream;
 import static berlin.yuna.clu.logic.SystemUtil.readFile;
 import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
 import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -43,7 +48,6 @@ import static org.hamcrest.Matchers.empty;
 class NatsConfigComponentTest {
 
     public static final Pattern RELEASE_PATTERN = Pattern.compile("\"tag_name\":\"(?<version>.*?)\"");
-    public static final int HELP_LINE_DESCRIPTION_INDEX = 37;
 
     @Test
     @DisplayName("Compare nats with java config")
@@ -57,26 +61,24 @@ class NatsConfigComponentTest {
 
         final var console = new ArrayList<String>();
         new Terminal().consumerInfoStream(console::add).consumerErrorStream(console::add).timeoutMs(10000).execute(natsServerPath.toString() + " --help");
-        final List<String> missingConfigs = console.stream().filter(line -> line != null
-                && line.length() >= HELP_LINE_DESCRIPTION_INDEX
-                && line.contains("-")
-                && !line.startsWith("                                     ")
-                && stream(NatsConfig.values()).noneMatch(config -> config.description().contains(line.substring(HELP_LINE_DESCRIPTION_INDEX).trim()))
-        ).collect(toList());
-
-        final var removedConfigs = stream(NatsConfig.values()).filter(config -> config.key() != null
-                        && console.stream().filter(Objects::nonNull).filter(line -> line.contains("-")).noneMatch(line ->
-                        line.matches(".*" + config.key() + "(?:$|\\n|,|\\s|\\n|\\r).*") && (line.length() < HELP_LINE_DESCRIPTION_INDEX || line.contains(config.description().split("\\r?\\n")[0]))
-                )
-        ).map(config -> String.format("name[%s] key [%s] desc [%s]", config, config.key(), config.description())).collect(toList());
-        assertThat("Missing config in java \n [" + nats.binary() + "] \n", missingConfigs, is(empty()));
+        final var helpMenuFull = console.stream().map(String::trim).filter(s -> !s.isBlank() && !s.isEmpty()).collect(toList());
+        final List<String[]> helpMenuItems = getHelpMenuItems(console);
+        final var missingKeyOrDesc = helpMenuItems.stream().map(NatsConfigComponentTest::explainNatsConfig).filter(Objects::nonNull).collect(toList());
+        final var removedConfigs = stream(NatsConfig.values()).filter(config -> config.key() != null).filter(config -> helpMenuItems.stream().noneMatch(item -> config.key().equals(item[0]))).collect(toList());
+        assertThat(
+                "Missing key or description of nats \n [" + nats.binary() + "] \n"
+                        + "missingConfigs [" + missingKeyOrDesc.size() + "/" + helpMenuItems.size() + "] [\n\n" + String.join("\n", missingKeyOrDesc) + "\n\n]\n"
+                        + "helpMenuList [\n\n" + String.join("\n", helpMenuFull) + "\n\n]\n",
+                missingKeyOrDesc.size(),
+                is(0)
+        );
         assertThat("Config was removed by nats \n [" + nats.binary() + "] \n", removedConfigs, is(empty()));
     }
 
     @Test
     @DisplayName("Compare config key with one dash")
     void getKey_WithOneDash_ShouldBeSuccessful() {
-        assertThat(NatsConfig.ADDR.key(), is(equalTo("--addr")));
+        assertThat(NatsConfig.NET.key(), is(equalTo("--net")));
     }
 
     @Test
@@ -128,5 +130,106 @@ class NatsConfigComponentTest {
         try (final BufferedReader buffer = new BufferedReader(new InputStreamReader(input, UTF_8))) {
             return buffer.lines().collect(Collectors.joining("\n"));
         }
+    }
+
+    private static List<String[]> getHelpMenuItems(final Collection<String> lines) {
+        return lines
+                .stream()
+                .map(String::trim)
+                .filter(line -> line.startsWith("-"))
+                .filter(line -> line.indexOf(" ", indexOfFirstKey(line)) != -1)
+                .map(line -> {
+                            final String[] result = new String[3];
+                            final int fromIndex = indexOfFirstKey(line);
+                            final var typeIndex = Stream.of(line.indexOf(" ", fromIndex), line.indexOf("=", fromIndex), line.indexOf("<", fromIndex)).filter(i -> i != -1).min(Integer::compareTo).orElse(fromIndex);
+                            result[0] = parseKey(line, fromIndex, typeIndex).replace(",", "").trim();
+                            result[1] = parseType(line, typeIndex).trim();
+                            result[2] = line.substring(result[1].isEmpty() ? typeIndex : line.indexOf(">", fromIndex) + 1).replace("[=<pid>]", "").trim();
+                            return result;
+                        }
+
+                )
+                .collect(Collectors.toList());
+    }
+
+    private static String parseKey(final String line, final int index, final Integer typeIndex) {
+        final var keys = line.substring(index, typeIndex).split(" ");
+        return keys[keys.length - 1];
+    }
+
+    private static String parseType(final String line, final int index) {
+        var result = line.substring(index).trim();
+        if (!Character.isLetterOrDigit(result.charAt(0))) {
+            result = result.startsWith("=") ? result.substring(1) : result;
+            result = result.startsWith("<") && result.contains(">") ? result.substring(1, result.indexOf(">")) : result;
+            result = result.startsWith("[") && result.contains("]") ? result.substring(1, result.indexOf("]")) : result;
+            return result;
+        }
+        return "";
+    }
+
+    private static Class<?> parseType(final String type) {
+        switch (type) {
+            case "host":
+            case "addr":
+            case "user":
+            case "rurl":
+            case "token":
+            case "string":
+            case "signal":
+            case "duration":
+            case "password":
+            case "server_name":
+                return String.class;
+            case "bool":
+                return Boolean.class;
+            case "dir":
+            case "file":
+                return Path.class;
+            case "url":
+            case "rurl-1":
+            case "cluster-url":
+                return URL.class;
+            case "int":
+            case "len":
+            case "size":
+            case "port":
+            case "limit":
+            case "number":
+                return Integer.class;
+            case "":
+                return null;
+            default:
+                throw new IllegalArgumentException("Unknown type [" + type + "]");
+        }
+    }
+
+    private static Integer indexOfFirstKey(final String line) {
+        return Optional.of(line.lastIndexOf("--")).filter(i -> i != -1)
+                .or(() -> Optional.of(line.indexOf("-")).filter(i -> i != -1))
+                .orElse(0);
+    }
+
+    private static String explainNatsConfig(final String[] kv) {
+        final var hasKey = stream(NatsConfig.values()).anyMatch(config -> kv[0].equals(config.key()));
+        final var hasDec = stream(NatsConfig.values()).anyMatch(config -> kv[2].equals(config.description().split("\n")[0].trim()));
+        final var typeMissmatch = stream(NatsConfig.values()).filter(config -> kv[0].equals(config.key())).findFirst().map(config -> {
+            final var clazz = parseType(kv[1].contains(",") ? "string" : kv[1]);
+            if (clazz != null && (!clazz.equals(config.type()) && (!config.type().equals(NatsConfig.SilentBoolean.class) && !clazz.equals(Boolean.class)))) {
+                return format("%s != %s (%s)", ofNullable(config.type()).map(Class::getSimpleName).orElse(null), clazz.getSimpleName(), kv[1]);
+            }
+            return null;
+        }).orElse(null);
+        final boolean noneMatch = stream(NatsConfig.values()).noneMatch(config -> kv[0].equals(config.key()) && kv[2].equals(config.description().split("\n")[0].trim()));
+        if (noneMatch || typeMissmatch != null) {
+            return "missing ["
+                    + Stream.of((!hasKey ? "key" : ""),
+                    (!hasDec ? "desc" : ""),
+                    (typeMissmatch != null ? typeMissmatch : "")).filter(s -> !s.isEmpty()).collect(joining(", "))
+                    + "] item ["
+                    + String.join(", ", kv)
+                    + "]";
+        }
+        return null;
     }
 }

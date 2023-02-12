@@ -11,11 +11,9 @@ import java.util.logging.Level;
 public enum NatsConfig {
 
     // Server Options
-    ADDR("--addr", "0.0.0.0", String.class, "Bind to host address (default: 0.0.0.0)"),
-    NET("--net", null, ADDR.type, ADDR.description),
+    NET("--net", "0.0.0.0", String.class, "Bind to host address (default: 0.0.0.0)"),
     PORT("--port", 4222, Integer.class, "Use port for clients (default: 4222)"),
-    NAME("--name", null, String.class, "Server name (default: auto)"),
-    SERVER_NAME("--server_name", NAME.defaultValue, NAME.type, NAME.description),
+    SERVER_NAME("--server_name", null, String.class, "Server name (default: auto)"),
     PID("--pid", null, Path.class, "File to store PID"),
     HTTP_PORT("--http_port", null, Integer.class, "Use port for http monitoring"),
     HTTPS_PORT("--https_port", null, Integer.class, "Use port for https monitoring"),
@@ -32,9 +30,9 @@ public enum NatsConfig {
     REMOTE_SYSLOG("--remote_syslog", null, String.class, "Syslog server addr (udp://localhost:514)"),
     DEBUG("--debug", false, SilentBoolean.class, "Enable debugging output" + System.lineSeparator() + "(default: false)"),
     TRACE("--trace", false, SilentBoolean.class, "Trace the raw protocol" + System.lineSeparator() + "(default: false)"),
-    VV("-VV ", false, SilentBoolean.class, "Verbose trace (traces system account as well)" + System.lineSeparator() + "(default: false)"),
-    DV("-DV ", false, SilentBoolean.class, "Debug and trace" + System.lineSeparator() + "(default: false)"),
-    DVV("-DVV ", false, SilentBoolean.class, "Debug and verbose trace (traces system account as well)" + System.lineSeparator() + "(default: false)"),
+    VV("-VV", false, SilentBoolean.class, "Verbose trace (traces system account as well)" + System.lineSeparator() + "(default: false)"),
+    DV("-DV", false, SilentBoolean.class, "Debug and trace" + System.lineSeparator() + "(default: false)"),
+    DVV("-DVV", false, SilentBoolean.class, "Debug and verbose trace (traces system account as well)" + System.lineSeparator() + "(default: false)"),
     LOG_SIZE_LIMIT("--log_size_limit", null, Integer.class, "Logfile size limit (default: auto)"),
     MAX_TRACED_MSG_LEN("--max_traced_msg_len", null, Integer.class, "Maximum printable length for traced messages (default: unlimited)"),
 
@@ -59,7 +57,7 @@ public enum NatsConfig {
     CLUSTER("--cluster", null, URL.class, "Cluster URL for solicited routes"),
     CLUSTER_NAME("--cluster_name", null, String.class, "Cluster Name, if not set one will be dynamically generated"),
     NO_ADVERTISE("--no_advertise", null, Boolean.class, "Do not advertise known cluster information to clients" + System.lineSeparator() + "(default: false)"),
-    LUSTER_ADVERTISE("--cluster_advertise", null, URL.class, "Cluster URL to advertise to other servers"),
+    LUSTER_ADVERTISE("--cluster_advertise", null, String.class, "Cluster URL to advertise to other servers"),
     CONNECT_RETRIES("--connect_retries", null, Integer.class, "For implicit routes, number of connect retries"),
     CLUSTER_LISTEN("--cluster_listen", null, URL.class, "Cluster url from which members can solicit routes"),
 

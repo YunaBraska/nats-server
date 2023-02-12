@@ -38,12 +38,12 @@ class NatsOptionsBuilderTest {
         //CONFIG_MAP
         assertThat(options.configMap(), is(notNullValue()));
         assertThat(options.configMap().size(), is(0));
-        options.configMap(Map.of(NatsConfig.ADDR, "0.0.0.0"));
+        options.configMap(Map.of(NatsConfig.NET, "0.0.0.0"));
         assertThat(options.configMap().size(), is(1));
-        options.config(NatsConfig.ADDR, "1.2.3.4");
-        assertThat(options.configMap().get(NatsConfig.ADDR), is("1.2.3.4"));
-        options.config("ADDR", "5.6.7.8");
-        assertThat(options.configMap().get(NatsConfig.ADDR), is("5.6.7.8"));
+        options.config(NatsConfig.NET, "1.2.3.4");
+        assertThat(options.configMap().get(NatsConfig.NET), is("1.2.3.4"));
+        options.config("NET", "5.6.7.8");
+        assertThat(options.configMap().get(NatsConfig.NET), is("5.6.7.8"));
 
         //PORT
         assertThat(options.port(), is(nullValue()));

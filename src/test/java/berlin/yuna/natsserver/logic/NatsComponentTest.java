@@ -15,9 +15,9 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static berlin.yuna.natsserver.config.NatsConfig.ADDR;
 import static berlin.yuna.natsserver.config.NatsConfig.DEBUG;
 import static berlin.yuna.natsserver.config.NatsConfig.JETSTREAM;
+import static berlin.yuna.natsserver.config.NatsConfig.NET;
 import static berlin.yuna.natsserver.config.NatsConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsConfig.PROFILE;
 import static berlin.yuna.natsserver.config.NatsConfig.TRACE;
@@ -179,7 +179,7 @@ class NatsComponentTest {
     @Test
     @DisplayName("Configure with NULL value should be ignored")
     void natsServer_withNullableConfigValue_shouldNotRunIntroExceptionOrInterrupt() {
-        new Nats(testConfig().config(ADDR, null));
+        new Nats(testConfig().config(NET, null));
     }
 
     @Test

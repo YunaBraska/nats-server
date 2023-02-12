@@ -315,7 +315,7 @@ public class Nats implements NatsInterface {
      * @return nats server url
      */
     public String url() {
-        return "nats://" + getValue(ADDR) + ":" + port();
+        return "nats://" + getValue(NET) + ":" + port();
     }
 
     /**
