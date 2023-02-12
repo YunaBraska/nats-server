@@ -34,6 +34,7 @@ class NatsOptionsBuilderTest {
         final var options = NatsOptions.natsBuilder();
         final var configFile = Path.of("AA/BB");
         final var customArgs = new String[]{"CC", "DD"};
+        final var version = NatsVersion.values()[0];
 
         //CONFIG_MAP
         assertThat(options.configMap(), is(notNullValue()));
@@ -49,6 +50,13 @@ class NatsOptionsBuilderTest {
         assertThat(options.port(), is(nullValue()));
         options.port(port);
         assertThat(options.port(), is(equalTo(port)));
+
+        //VERSION
+        assertThat(options.version(), is(nullValue()));
+        options.version("123");
+        assertThat(options.version(), is(equalTo("v123")));
+        options.version(version);
+        assertThat(options.version(), is(equalTo(version.value())));
 
         //JETSTREAM
         assertThat(options.jetStream(), is(nullValue()));
@@ -109,9 +117,9 @@ class NatsOptionsBuilderTest {
         assertThat(options.timeoutMs(), is(equalTo(timeoutMs)));
 
         //OPTIONS BUILD
-        assertThat(options.configMap().size(), is(10));
+        assertThat(options.configMap().size(), is(11));
         final var build = options.build();
-        assertThat(build.config().size(), is(10));
+        assertThat(build.config().size(), is(11));
 
         assertThat(build.port(), is(equalTo(port)));
         assertThat(build.jetStream(), is(equalTo(true)));
@@ -125,7 +133,7 @@ class NatsOptionsBuilderTest {
         assertThat(build.config().get(NatsConfig.NATS_TIMEOUT_MS), is(equalTo(String.valueOf(timeoutMs))));
 
         //OPTIONS INTERFACE
-        assertThat(options.configMap().size(), is(10));
+        assertThat(options.configMap().size(), is(11));
         final var interFace = (io.nats.commons.NatsOptions) options.build();
 
         assertThat(interFace.port(), is(equalTo(port)));

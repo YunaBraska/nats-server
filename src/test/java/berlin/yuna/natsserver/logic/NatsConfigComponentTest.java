@@ -94,7 +94,7 @@ class NatsConfigComponentTest {
             final HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             con.setRequestProperty("Accept", "application/vnd.github+json");
-            con.setRequestProperty("User-Agent", "MyGitHubClient");
+            con.setRequestProperty("User-Agent", "YunaBraskaRestClient");
             ofNullable(System.getProperty("GITHUB_TOKEN", System.getenv("GITHUB_TOKEN")))
                     .or(() -> ofNullable(System.getProperty("CI_TOKEN", System.getenv("CI_TOKEN"))))
                     .or(() -> ofNullable(System.getProperty("CI_TOKEN_WORKFLOW", System.getenv("CI_TOKEN_WORKFLOW"))))
@@ -149,6 +149,7 @@ class NatsConfigComponentTest {
                         }
 
                 )
+                .filter(kv -> !"--version".equals(kv[0]))
                 .collect(Collectors.toList());
     }
 

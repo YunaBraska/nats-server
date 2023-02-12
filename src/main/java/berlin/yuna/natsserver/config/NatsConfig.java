@@ -66,7 +66,6 @@ public enum NatsConfig {
 
     // Common Options
     HELP("--help", false, SilentBoolean.class, "Show this message" + System.lineSeparator() + "(default: false)"),
-    VERSION("--version", false, SilentBoolean.class, "Show version" + System.lineSeparator() + "(default: false)"),
     HELP_TLS("--help_tls", false, SilentBoolean.class, "TLS help" + System.lineSeparator() + "(default: false)"),
 
     //WRAPPER configs

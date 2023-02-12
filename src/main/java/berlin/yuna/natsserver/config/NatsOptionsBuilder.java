@@ -37,6 +37,34 @@ public class NatsOptionsBuilder {
     }
 
     /**
+     * @return Nats version
+     * @see NatsConfig#NATS_VERSION
+     */
+    public String version() {
+        return configMap.get(NatsConfig.NATS_VERSION);
+    }
+
+    /**
+     * @param version Sets the nats version
+     * @return self {@link NatsOptionsBuilder}
+     * @see NatsConfig#NATS_VERSION
+     */
+    public NatsOptionsBuilder version(final String version) {
+        configMap.put(NatsConfig.NATS_VERSION, ofNullable(version).map(v -> v.toLowerCase().startsWith("v") ? v : "v" + v).orElse(null));
+        return this;
+    }
+
+    /**
+     * @param version Sets the nats version
+     * @return self {@link NatsOptionsBuilder}
+     * @see NatsConfig#NATS_VERSION
+     */
+    public NatsOptionsBuilder version(final NatsVersion version) {
+        configMap.put(NatsConfig.NATS_VERSION, version != null ? version.value() : null);
+        return this;
+    }
+
+    /**
      * @return The port to start on or &lt;=0 to use an automatically allocated port
      * @see NatsConfig#PORT
      */
