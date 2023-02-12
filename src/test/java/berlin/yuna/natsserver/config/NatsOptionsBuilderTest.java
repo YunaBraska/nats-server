@@ -121,6 +121,7 @@ class NatsOptionsBuilderTest {
         final var build = options.build();
         assertThat(build.config().size(), is(11));
 
+        assertThat(build.version(), is(equalTo(version.value())));
         assertThat(build.port(), is(equalTo(port)));
         assertThat(build.jetStream(), is(equalTo(true)));
         assertThat(build.debug(), is(equalTo(true)));

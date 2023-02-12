@@ -11,6 +11,7 @@ import static berlin.yuna.natsserver.config.NatsConfig.ARGS_SEPARATOR;
 import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValue;
 import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValueB;
 import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValueI;
+import static java.util.Optional.ofNullable;
 
 @SuppressWarnings("java:S2176")
 public class NatsOptions implements io.nats.commons.NatsOptions {
@@ -21,6 +22,14 @@ public class NatsOptions implements io.nats.commons.NatsOptions {
     public NatsOptions(final Logger logger, final Map<NatsConfig, String> config) {
         this.logger = logger;
         this.config = config == null ? new EnumMap<>(NatsConfig.class) : new EnumMap<>(config);
+    }
+
+    /**
+     * @return Nats version
+     * @see NatsConfig#NATS_VERSION
+     */
+    public String version() {
+        return config.get(NatsConfig.NATS_VERSION);
     }
 
     /**
