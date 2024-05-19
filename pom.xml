@@ -41,7 +41,7 @@
         <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <!-- PROD -->
-        <command-line-util.version>2.1.24</command-line-util.version>
+        <command-line-util.version>2.1.25</command-line-util.version>
         <!-- TEST -->
         <hamcrest-core.version>2.2</hamcrest-core.version>
         <junit-jupiter-api.version>5.11.0-M2</junit-jupiter-api.version>
