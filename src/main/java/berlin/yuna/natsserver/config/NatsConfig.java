@@ -76,7 +76,7 @@ public enum NatsConfig {
 
     NATS_LOG_NAME(null, Nats.class.getSimpleName(), String.class, "java wrapper name"),
 
-    NATS_VERSION(null, "v2.10.18", String.class, "Overwrites Nats server version on path"),
+    NATS_VERSION(null, "v2.10.19", String.class, "Overwrites Nats server version on path"),
 
     NATS_DOWNLOAD_URL(null, "https://github.com/nats-io/nats-server/releases/download/%" + NATS_VERSION.name() + "%/nats-server-%" + NATS_VERSION.name() + "%-%" + NATS_SYSTEM.name() + "%.zip", URL.class, "Path to Nats binary or zip file"),
 
