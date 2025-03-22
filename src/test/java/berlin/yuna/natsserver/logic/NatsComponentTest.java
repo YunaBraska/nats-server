@@ -1,8 +1,8 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsConfig;
-import berlin.yuna.natsserver.config.NatsOptionsBuilder;
 import berlin.yuna.natsserver.config.NatsOptions;
+import berlin.yuna.natsserver.config.NatsOptionsBuilder;
 import berlin.yuna.natsserver.model.exception.NatsDownloadException;
 import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
 import berlin.yuna.natsserver.model.exception.NatsStartException;
@@ -15,21 +15,11 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static berlin.yuna.natsserver.config.NatsConfig.DEBUG;
-import static berlin.yuna.natsserver.config.NatsConfig.JETSTREAM;
-import static berlin.yuna.natsserver.config.NatsConfig.NET;
-import static berlin.yuna.natsserver.config.NatsConfig.PORT;
-import static berlin.yuna.natsserver.config.NatsConfig.PROFILE;
-import static berlin.yuna.natsserver.config.NatsConfig.TRACE;
+import static berlin.yuna.natsserver.config.NatsConfig.*;
 import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
 import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
 import static berlin.yuna.natsserver.model.ValueSource.ENV;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("UnitTest")
@@ -51,38 +41,36 @@ class NatsComponentTest {
     @DisplayName("Default config")
     void natsServer_withoutConfig_shouldStartWithDefaultValues() {
         final var nats = new Nats();
-        assertThat(nats.pid(), is(greaterThan(-1)));
+        assertThat(nats.pid()).isGreaterThan(-1);
     }
 
     @Test
     @DisplayName("Default config and port")
     void natsServer_withoutConfigAndPort_shouldStartWithDefaultValues() {
         final var nats = new Nats(-1);
-        assertThat(nats.pid(), is(greaterThan(-1)));
+        assertThat(nats.pid()).isGreaterThan(-1);
     }
 
     @Test
     @DisplayName("Default config JetStream")
     void natsServer_withJetStream_shouldStartWithDefaultValues() {
         final var nats = new Nats(testConfig().config(JETSTREAM, "true"));
-        assertThat(nats.pid(), is(greaterThan(-1)));
+        assertThat(nats.pid()).isGreaterThan(-1);
     }
 
     @Test
     @DisplayName("Deactivate JetStream")
     void natsServer_withJetStreamFalse_shouldNotUseJetStream() {
         try (final var nats = new Nats(testConfig().config(JETSTREAM, "true"))) {
-            assertThat(nats.getValue(JETSTREAM), is(notNullValue()));
-            assertThat(nats.jetStream(), is(true));
-            assertThat(nats.debug(), is(false));
+            assertThat(nats.getValue(JETSTREAM)).isNotNull();
+            assertThat(nats.jetStream()).isTrue();
+            assertThat(nats.debug()).isFalse();
         }
         try (final var nats = new Nats(testConfig().config(JETSTREAM, "false"))) {
-            assertThat(nats.getValue(JETSTREAM), is("false"));
-            assertThat(nats.jetStream(), is(false));
-            assertThat(nats.debug(), is(false));
-
+            assertThat(nats.getValue(JETSTREAM)).isEqualTo("false");
+            assertThat(nats.jetStream()).isFalse();
+            assertThat(nats.debug()).isFalse();
         }
-
     }
 
     @Test
@@ -90,7 +78,7 @@ class NatsComponentTest {
     void natsServer_shouldShutdownGracefully() throws Exception {
         final var port = new AtomicInteger(-99);
         try (final var nats = new Nats(testConfig().config("user", "adminUser", "PAss", "adminPw"))) {
-            assertThat(nats.port(), is(greaterThan(0)));
+            assertThat(nats.port()).isGreaterThan(0);
             port.set(nats.port());
             new Socket("localhost", port.get()).close();
         }
@@ -104,14 +92,16 @@ class NatsComponentTest {
     @Test
     @DisplayName("Unknown config is ignored")
     void natsServer_invalidConfig_shouldThrowException() {
-        assertThrows(IllegalArgumentException.class, () -> new Nats(testConfig().config("user", "adminUser", "auth", "isValid", "", "password", " ")));
+        assertThrows(IllegalArgumentException.class, () ->
+                new Nats(testConfig().config("user", "adminUser", "auth", "isValid", "", "password", " "))
+        );
     }
 
     @Test
     @DisplayName("Duplicate starts will be ignored")
     void natsServer_duplicateStart_shouldNotRunIntroExceptionOrInterrupt() {
         final var nats = new Nats(testConfig()).start().start().start();
-        assertThat(nats.pid(), is(greaterThan(-1)));
+        assertThat(nats.pid()).isGreaterThan(-1);
     }
 
     @Test
@@ -141,7 +131,7 @@ class NatsComponentTest {
     void natsServer_stopWithoutStart_shouldNotRunIntroException() {
         final var nats = NatsOptions.natsBuilder().autostart(false).nats();
         nats.close();
-        assertThat(nats.pid(), is(-1));
+        assertThat(nats.pid()).isEqualTo(-1);
     }
 
     @Test
@@ -157,9 +147,9 @@ class NatsComponentTest {
         final int pid3 = nats3.pid();
         nats3.close();
 
-        assertThat(pid1, is(not(equalTo(pid2))));
-        assertThat(pid2, is(not(equalTo(pid3))));
-        assertThat(pid3, is(not(equalTo(pid1))));
+        assertThat(pid1).isNotEqualTo(pid2);
+        assertThat(pid2).isNotEqualTo(pid3);
+        assertThat(pid3).isNotEqualTo(pid1);
     }
 
     @Test
@@ -167,11 +157,11 @@ class NatsComponentTest {
     void natsServer_inParallel_shouldBeOkay() {
         final Nats nats1 = new Nats(-1);
         final Nats nats2 = new Nats(-1);
-        assertThat(nats1.pid(), is(not(equalTo(nats2.pid()))));
-        assertThat(nats1.port(), is(not(equalTo(nats2.port()))));
-        assertThat(nats1.pidFile(), is(not(equalTo(nats2.pidFile()))));
-        assertThat(Files.exists(nats1.pidFile()), is(true));
-        assertThat(Files.exists(nats2.pidFile()), is(true));
+        assertThat(nats1.pid()).isNotEqualTo(nats2.pid());
+        assertThat(nats1.port()).isNotEqualTo(nats2.port());
+        assertThat(nats1.pidFile()).isNotEqualTo(nats2.pidFile());
+        assertThat(Files.exists(nats1.pidFile())).isTrue();
+        assertThat(Files.exists(nats2.pidFile())).isTrue();
         nats1.close();
         nats2.close();
     }
@@ -196,19 +186,18 @@ class NatsComponentTest {
     @DisplayName("Configure without value param")
     void natsServer_withoutValue() {
         final var nats = new Nats(testConfig().config(TRACE, "true").config(DEBUG, "true"));
-        assertThat(nats.pid(), is(greaterThan(-1)));
+        assertThat(nats.pid()).isGreaterThan(-1);
     }
-
 
     @Test
     @DisplayName("Cov dummy")
     void covDummy() {
-        assertThat(JETSTREAM.type(), is(equalTo(NatsConfig.SilentBoolean.class)));
-        assertThat(mapValueOf(ENV, "some value").toString(), is(notNullValue()));
-        assertThat(new NatsFileReaderException("dummy", new RuntimeException()), is(notNullValue()));
-        assertThat(new NatsStartException(new RuntimeException()), is(notNullValue()));
-        assertThat(new NatsDownloadException(new RuntimeException()), is(notNullValue()));
-        assertThat(new NatsConfig.SilentBoolean().getAndSet(true), is(false));
+        assertThat(JETSTREAM.type()).isEqualTo(NatsConfig.SilentBoolean.class);
+        assertThat(mapValueOf(ENV, "some value").toString()).isNotNull();
+        assertThat(new NatsFileReaderException("dummy", new RuntimeException())).isNotNull();
+        assertThat(new NatsStartException(new RuntimeException())).isNotNull();
+        assertThat(new NatsDownloadException("new RuntimeException()")).isNotNull();
+        assertThat(new NatsConfig.SilentBoolean().getAndSet(true)).isFalse();
     }
 
     private NatsOptionsBuilder testConfig() {

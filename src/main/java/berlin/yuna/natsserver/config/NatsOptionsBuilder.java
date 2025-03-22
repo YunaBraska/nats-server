@@ -246,6 +246,24 @@ public class NatsOptionsBuilder {
     }
 
     /**
+     * @return true = registers a shutdown hook, false manual use `.stop()` method
+     * @see NatsConfig#NATS_SHUTDOWN_HOOK
+     */
+    public Boolean shutdownHook() {
+        return getValueB(configMap, NatsConfig.NATS_SHUTDOWN_HOOK);
+    }
+
+    /**
+     * @param enabled true = registers a shutdown hook, false manual use `.stop()` method
+     * @return self {@link NatsOptionsBuilder}
+     * @see NatsConfig#NATS_SHUTDOWN_HOOK
+     */
+    public NatsOptionsBuilder shutdownHook(final Boolean enabled) {
+        setValueB(configMap, NatsConfig.NATS_SHUTDOWN_HOOK, enabled);
+        return this;
+    }
+
+    /**
      * @return defines the start-up timeout in milliseconds (-1 == default)
      */
     public Long timeoutMs() {

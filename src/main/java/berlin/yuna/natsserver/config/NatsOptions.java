@@ -11,7 +11,6 @@ import static berlin.yuna.natsserver.config.NatsConfig.ARGS_SEPARATOR;
 import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValue;
 import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValueB;
 import static berlin.yuna.natsserver.config.NatsOptionsBuilder.getValueI;
-import static java.util.Optional.ofNullable;
 
 @SuppressWarnings("java:S2176")
 public class NatsOptions implements io.nats.commons.NatsOptions {

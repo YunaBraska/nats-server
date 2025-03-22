@@ -8,9 +8,7 @@ import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
 import static berlin.yuna.natsserver.model.ValueSource.DEFAULT;
 import static berlin.yuna.natsserver.model.ValueSource.ENV;
 import static berlin.yuna.natsserver.model.ValueSource.FILE;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("UnitTest")
 @DisplayName("Nats config test")
@@ -22,10 +20,10 @@ class MapValueTest {
         final String newValue = "new value";
 
         //update
-        assertThat(mapValueOf(ENV, startValue).update(ENV, newValue).value(), is(equalTo(newValue)));
+        assertThat(mapValueOf(ENV, startValue).update(ENV, newValue).value()).isEqualTo(newValue);
         //downgrade not possible
-        assertThat(mapValueOf(ENV, startValue).update(DEFAULT, newValue).value(), is(equalTo(startValue)));
+        assertThat(mapValueOf(ENV, startValue).update(DEFAULT, newValue).value()).isEqualTo(startValue);
         //upgrade
-        assertThat(mapValueOf(ENV, startValue).update(FILE, newValue).value(), is(equalTo(newValue)));
+        assertThat(mapValueOf(ENV, startValue).update(FILE, newValue).value()).isEqualTo(newValue);
     }
 }

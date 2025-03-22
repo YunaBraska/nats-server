@@ -12,16 +12,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.nio.file.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,10 +29,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("IntegrationTest")
 @DisplayName("NatsServer ConfigTest")
@@ -58,38 +47,50 @@ class NatsConfigComponentTest {
         nats.downloadNats();
         final Path natsServerPath = nats.binary();
 
-
         final var console = new ArrayList<String>();
         new Terminal().consumerInfoStream(console::add).consumerErrorStream(console::add).timeoutMs(10000).execute(natsServerPath.toString() + " --help");
-        final var helpMenuFull = console.stream().map(String::trim).filter(s -> !s.isBlank() && !s.isEmpty()).collect(toList());
+        final var helpMenuFull = console.stream().map(String::trim).filter(s -> !s.isBlank()).collect(toList());
         final List<String[]> helpMenuItems = getHelpMenuItems(console);
         final var missingKeyOrDesc = helpMenuItems.stream().map(NatsConfigComponentTest::explainNatsConfig).filter(Objects::nonNull).collect(toList());
-        final var removedConfigs = stream(NatsConfig.values()).filter(config -> config.key() != null).filter(config -> helpMenuItems.stream().noneMatch(item -> config.key().equals(item[0]))).collect(toList());
-        assertThat(
-                "Missing key or description of nats \n [" + nats.binary() + "] \n"
-                        + "missingConfigs [" + missingKeyOrDesc.size() + "/" + helpMenuItems.size() + "] [\n\n" + String.join("\n", missingKeyOrDesc) + "\n\n]\n"
-                        + "helpMenuList [\n\n" + String.join("\n", helpMenuFull) + "\n\n]\n",
-                missingKeyOrDesc.size(),
-                is(0)
-        );
-        assertThat("Config was removed by nats \n [" + nats.binary() + "] \n", removedConfigs, is(empty()));
+        final var removedConfigs = stream(NatsConfig.values())
+                .filter(config -> config.key() != null)
+                .filter(config -> helpMenuItems.stream().noneMatch(item -> config.key().equals(item[0])))
+                .collect(toList());
+
+        assertThat(missingKeyOrDesc)
+                .withFailMessage(
+                        "Missing key or description of nats \n [%s] \nmissingConfigs [%d/%d] [\n\n%s\n\n]\nhelpMenuList [\n\n%s\n\n]\n",
+                        nats.binary(),
+                        missingKeyOrDesc.size(),
+                        helpMenuItems.size(),
+                        String.join("\n", missingKeyOrDesc),
+                        String.join("\n", helpMenuFull)
+                )
+                .isEmpty();
+
+        assertThat(removedConfigs)
+                .withFailMessage("Config was removed by nats \n [%s] \n %s", nats.binary(), removedConfigs)
+                .isEmpty();
     }
 
     @Test
     @DisplayName("Compare config key with one dash")
     void getKey_WithOneDash_ShouldBeSuccessful() {
-        assertThat(NatsConfig.NET.key(), is(equalTo("--net")));
+        assertThat(NatsConfig.NET.key()).isEqualTo("--net");
     }
 
     @Test
     @DisplayName("Compare config key with equal sign")
     void getKey_WithBoolean_ShouldAddOneEqualSign() {
-        assertThat(NatsConfig.NO_ADVERTISE.key(), is(equalTo("--no_advertise")));
+        assertThat(NatsConfig.NO_ADVERTISE.key()).isEqualTo("--no_advertise");
     }
 
     private String updateNatsVersion() throws IOException {
         try (final Stream<Path> stream = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99)) {
-            final Path configJavaFile = stream.filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsConfig.class.getSimpleName() + ".java")).findFirst().orElse(null);
+            final Path configJavaFile = stream
+                    .filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsConfig.class.getSimpleName() + ".java"))
+                    .findFirst()
+                    .orElse(null);
             final URL url = new URL("https://api.github.com/repos/nats-io/nats-server/releases/latest");
             final HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
@@ -133,22 +134,21 @@ class NatsConfigComponentTest {
     }
 
     private static List<String[]> getHelpMenuItems(final Collection<String> lines) {
-        return lines
-                .stream()
+        return lines.stream()
                 .map(String::trim)
                 .filter(line -> line.startsWith("-"))
                 .filter(line -> line.indexOf(" ", indexOfFirstKey(line)) != -1)
                 .map(line -> {
-                            final String[] result = new String[3];
-                            final int fromIndex = indexOfFirstKey(line);
-                            final var typeIndex = Stream.of(line.indexOf(" ", fromIndex), line.indexOf("=", fromIndex), line.indexOf("<", fromIndex)).filter(i -> i != -1).min(Integer::compareTo).orElse(fromIndex);
-                            result[0] = parseKey(line, fromIndex, typeIndex).replace(",", "").trim();
-                            result[1] = parseType(line, typeIndex).trim();
-                            result[2] = line.substring(result[1].isEmpty() ? typeIndex : line.indexOf(">", fromIndex) + 1).replace("[=<pid>]", "").trim();
-                            return result;
-                        }
-
-                )
+                    final String[] result = new String[3];
+                    final int fromIndex = indexOfFirstKey(line);
+                    final var typeIndex = Stream.of(line.indexOf(" ", fromIndex), line.indexOf("=", fromIndex), line.indexOf("<", fromIndex))
+                            .filter(i -> i != -1).min(Integer::compareTo).orElse(fromIndex);
+                    result[0] = parseKey(line, fromIndex, typeIndex).replace(",", "").trim();
+                    result[1] = parseType(line, typeIndex).trim();
+                    result[2] = line.substring(result[1].isEmpty() ? typeIndex : line.indexOf(">", fromIndex) + 1)
+                            .replace("[=<pid>]", "").trim();
+                    return result;
+                })
                 .filter(kv -> !"--version".equals(kv[0]))
                 .collect(Collectors.toList());
     }
@@ -214,19 +214,31 @@ class NatsConfigComponentTest {
     private static String explainNatsConfig(final String[] kv) {
         final var hasKey = stream(NatsConfig.values()).anyMatch(config -> kv[0].equals(config.key()));
         final var hasDec = stream(NatsConfig.values()).anyMatch(config -> kv[2].equals(config.description().split("\n")[0].trim()));
-        final var typeMissmatch = stream(NatsConfig.values()).filter(config -> kv[0].equals(config.key())).findFirst().map(config -> {
-            final var clazz = parseType(kv[1].contains(",") ? "string" : kv[1]);
-            if (clazz != null && (!clazz.equals(config.type()) && (!config.type().equals(NatsConfig.SilentBoolean.class) && !clazz.equals(Boolean.class)))) {
-                return format("%s != %s (%s)", ofNullable(config.type()).map(Class::getSimpleName).orElse(null), clazz.getSimpleName(), kv[1]);
-            }
-            return null;
-        }).orElse(null);
-        final boolean noneMatch = stream(NatsConfig.values()).noneMatch(config -> kv[0].equals(config.key()) && kv[2].equals(config.description().split("\n")[0].trim()));
+        final var typeMissmatch = stream(NatsConfig.values())
+                .filter(config -> kv[0].equals(config.key()))
+                .findFirst()
+                .map(config -> {
+                    final var clazz = parseType(kv[1].contains(",") ? "string" : kv[1]);
+                    if (clazz != null && (!clazz.equals(config.type())
+                            && (!config.type().equals(NatsConfig.SilentBoolean.class)
+                            && !clazz.equals(Boolean.class)))) {
+                        return format("%s != %s (%s)",
+                                Optional.of(config.type()).map(Class::getSimpleName).orElse(null),
+                                clazz.getSimpleName(),
+                                kv[1]);
+                    }
+                    return null;
+                }).orElse(null);
+
+        final boolean noneMatch = stream(NatsConfig.values()).noneMatch(config -> kv[0].equals(config.key())
+                && kv[2].equals(config.description().split("\n")[0].trim()));
         if (noneMatch || typeMissmatch != null) {
             return "missing ["
-                    + Stream.of((!hasKey ? "key" : ""),
+                    + Stream.of(
+                    (!hasKey ? "key" : ""),
                     (!hasDec ? "desc" : ""),
-                    (typeMissmatch != null ? typeMissmatch : "")).filter(s -> !s.isEmpty()).collect(joining(", "))
+                    (typeMissmatch != null ? typeMissmatch : "")
+            ).filter(s -> !s.isEmpty()).collect(joining(", "))
                     + "] item ["
                     + String.join(", ", kv)
                     + "]";
