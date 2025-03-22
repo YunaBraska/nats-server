@@ -11,7 +11,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static berlin.yuna.natsserver.logic.Nats.replaceEnds;
+import static berlin.yuna.natsserver.logic.NatsUtils.deleteDirectory;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public final class Decompressor {
@@ -19,28 +19,36 @@ public final class Decompressor {
     public static Path extractAndReturnBiggest(final Path archivePath, final Path target) throws IOException {
         final String name = archivePath.getFileName().toString().toLowerCase();
         final Path tempDir = Files.createTempDirectory("unzipped_");
+        Path tarFile = null;
 
-        if (name.endsWith(".zip")) {
-            unzip(archivePath, tempDir);
-        } else if (name.endsWith(".tar.gz") || name.endsWith(".tgz")) {
-            untar(ungzip(archivePath), tempDir);
-        } else if (name.endsWith(".gz")) {
-            gunzipSingle(archivePath, tempDir);
-        } else {
-            throw new IllegalArgumentException("Unsupported file type: " + name);
+        try {
+            if (name.endsWith(".zip")) {
+                unzip(archivePath, tempDir);
+            } else if (name.endsWith(".tar.gz") || name.endsWith(".tgz")) {
+                tarFile = ungzip(archivePath);
+                untar(tarFile, tempDir);
+            } else if (name.endsWith(".gz")) {
+                gunzipSingle(archivePath, tempDir);
+            } else {
+                throw new IllegalArgumentException("Unsupported file type: " + name);
+            }
+
+            final Path biggest;
+            try (final Stream<Path> files = Files.walk(tempDir)) {
+                biggest = files.filter(Files::isRegularFile)
+                        .max(Comparator.comparingLong(f -> f.toFile().length()))
+                        .orElseThrow(() -> new IOException("No files found after extraction"));
+            }
+
+            Files.createDirectories(target.getParent());
+            Files.copy(biggest, target, REPLACE_EXISTING);
+            return target;
+        } finally {
+            if (tarFile != null) {
+                Files.deleteIfExists(tarFile);
+            }
+            deleteDirectory(tempDir);
         }
-
-        final Path biggest;
-        try (final Stream<Path> files = Files.walk(tempDir)) {
-            biggest = files.filter(Files::isRegularFile)
-                    .max(Comparator.comparingLong(f -> f.toFile().length()))
-                    .orElseThrow(() -> new IOException("No files found after extraction"));
-        }
-
-        Files.createDirectories(target.getParent());
-        Files.copy(biggest, target, REPLACE_EXISTING);
-        Files.deleteIfExists(tempDir);
-        return target;
     }
 
     private static void unzip(final Path zipFile, final Path destDir) throws IOException {
@@ -72,9 +80,14 @@ public final class Decompressor {
     }
 
     private static void gunzipSingle(final Path gzFile, final Path destDir) throws IOException {
-        final String fileName = replaceEnds(gzFile.toString(), ".gz");
+        // Extract the base filename without .gz extension
+        String fileName = gzFile.getFileName().toString();
+        if (fileName.toLowerCase().endsWith(".gz")) {
+            fileName = fileName.substring(0, fileName.length() - 3);
+        }
+
         final Path out = destDir.resolve(fileName);
-        Files.createDirectories(out.getParent());
+        Files.createDirectories(destDir);
         try (final GZIPInputStream gis = new GZIPInputStream(Files.newInputStream(gzFile));
              final OutputStream os = Files.newOutputStream(out)) {
             copy(gis, os);

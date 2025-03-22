@@ -3,21 +3,14 @@ package berlin.yuna.natsserver.logic;
 import berlin.yuna.clu.model.ThrowingFunction;
 import berlin.yuna.natsserver.config.NatsConfig;
 import berlin.yuna.natsserver.model.MapValue;
-import berlin.yuna.natsserver.model.exception.NatsDownloadException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,18 +18,11 @@ import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 
 import static berlin.yuna.clu.logic.SystemUtil.OS;
 import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH;
 import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH_TYPE;
-import static berlin.yuna.natsserver.logic.Decompressor.extractAndReturnBiggest;
 import static java.nio.channels.Channels.newChannel;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.util.Comparator.comparingLong;
 import static java.util.Optional.ofNullable;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -86,18 +72,20 @@ public class NatsUtils {
         }
     }
 
-    public static Path unzip(final Path source, final Path target) throws IOException {
-        try (final ZipFile zipFile = new ZipFile(source.toFile())) {
-            final ZipEntry max = zipFile.stream().max(comparingLong(ZipEntry::getSize)).orElseThrow(() -> new IllegalStateException("File not found " + zipFile));
-            Files.copy(zipFile.getInputStream(max), target);
-        } catch (ZipException ze) {
-            Files.copy(new FileInputStream(source.toFile()), target);
+    public static void deleteDirectory(final Path directory) throws IOException {
+        if (Files.exists(directory)) {
+            try (final Stream<Path> walk = Files.walk(directory)) {
+                walk.sorted(Comparator.reverseOrder()).forEach(path -> {
+                            try {
+                                Files.delete(path);
+                            } catch (IOException e) {
+                                // ignored
+                            }
+                        }
+                );
+            }
         }
-        Files.deleteIfExists(source);
-        return target;
     }
-
-
 
     public static void validatePort(final int port, final long timeoutMs, final boolean untilFree, final Supplier<Exception> onFail, final BooleanSupplier disrupt) throws Exception {
         if (!waitForPort(port, timeoutMs, untilFree, disrupt)) {
@@ -152,7 +140,7 @@ public class NatsUtils {
     }
 
     public static boolean isNotEmpty(final String string) {
-        return string != null && !string.isEmpty() && !string.isBlank();
+        return string != null && !string.isBlank();
     }
 
     private static String envValue(final String key, final Map<NatsConfig, MapValue> config) {
