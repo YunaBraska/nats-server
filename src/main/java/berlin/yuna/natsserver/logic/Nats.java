@@ -7,6 +7,7 @@ import berlin.yuna.natsserver.config.NatsOptions;
 import berlin.yuna.natsserver.config.NatsOptionsBuilder;
 import berlin.yuna.natsserver.model.MapValue;
 import berlin.yuna.natsserver.model.ValueSource;
+import berlin.yuna.natsserver.model.exception.NatsDownloadException;
 import berlin.yuna.natsserver.model.exception.NatsStartException;
 import io.nats.commons.NatsInterface;
 
@@ -33,9 +34,37 @@ import java.util.stream.Collectors;
 
 import static berlin.yuna.clu.logic.SystemUtil.OS;
 import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
-import static berlin.yuna.natsserver.config.NatsConfig.*;
+import static berlin.yuna.natsserver.config.NatsConfig.ARGS_SEPARATOR;
+import static berlin.yuna.natsserver.config.NatsConfig.CONFIG;
+import static berlin.yuna.natsserver.config.NatsConfig.DEBUG;
+import static berlin.yuna.natsserver.config.NatsConfig.DV;
+import static berlin.yuna.natsserver.config.NatsConfig.DVV;
+import static berlin.yuna.natsserver.config.NatsConfig.JETSTREAM;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_ARGS;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_AUTOSTART;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_BINARY_PATH;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_DOWNLOAD_URL;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_LOG_NAME;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_PROPERTY_FILE;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_SHUTDOWN_HOOK;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_SYSTEM;
+import static berlin.yuna.natsserver.config.NatsConfig.NATS_TIMEOUT_MS;
+import static berlin.yuna.natsserver.config.NatsConfig.NET;
+import static berlin.yuna.natsserver.config.NatsConfig.PID;
+import static berlin.yuna.natsserver.config.NatsConfig.PORT;
+import static berlin.yuna.natsserver.config.NatsConfig.SIGNAL;
 import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
-import static berlin.yuna.natsserver.logic.NatsUtils.*;
+import static berlin.yuna.natsserver.logic.Decompressor.extractAndReturnBiggest;
+import static berlin.yuna.natsserver.logic.NatsUtils.download;
+import static berlin.yuna.natsserver.logic.NatsUtils.getEnv;
+import static berlin.yuna.natsserver.logic.NatsUtils.getNextFreePort;
+import static berlin.yuna.natsserver.logic.NatsUtils.getPropertyFiles;
+import static berlin.yuna.natsserver.logic.NatsUtils.ignoreException;
+import static berlin.yuna.natsserver.logic.NatsUtils.isNotEmpty;
+import static berlin.yuna.natsserver.logic.NatsUtils.removeQuotes;
+import static berlin.yuna.natsserver.logic.NatsUtils.resolveEnvs;
+import static berlin.yuna.natsserver.logic.NatsUtils.validatePort;
+import static berlin.yuna.natsserver.logic.NatsUtils.waitForPort;
 import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
 import static berlin.yuna.natsserver.model.ValueSource.DEFAULT;
 import static berlin.yuna.natsserver.model.ValueSource.DSL;
@@ -123,7 +152,7 @@ public class Nats implements NatsInterface {
      * @param natsOptions nats options
      */
     public Nats(final io.nats.commons.NatsOptions natsOptions) {
-        Runtime.getRuntime().addShutdownHook(new Thread(this::close));
+        ofNullable(getValue(NATS_SHUTDOWN_HOOK)).filter(Boolean::valueOf).ifPresent(shutdownHook -> Runtime.getRuntime().addShutdownHook(new Thread(this::close)));
         final var timeoutMsTmp = new AtomicLong(-1);
         if (natsOptions instanceof NatsOptions) {
             ((NatsOptions) natsOptions).config().forEach(this::addConfig);
@@ -383,13 +412,40 @@ public class Nats implements NatsInterface {
         final Path binaryPath = binary();
         Files.createDirectories(binaryPath.getParent());
         if (Files.notExists(binaryPath)) {
-            final URL source = new URL(getValue(NATS_DOWNLOAD_URL));
-            unzip(download(source, Paths.get(binary().toString() + ".zip")), binaryPath);
+            try {
+                final URL source = new URL(getValue(NATS_DOWNLOAD_URL));
+                extractAndReturnBiggest(download(source, Paths.get(binary().toString() + ".zip")), binaryPath);
+            } catch (final Exception e) {
+                final String base = replaceEnds(getValue(NATS_DOWNLOAD_URL), ".zip", ".tar.gz", ".tgz", ".tar");
+                for (String ending : new String[]{".zip", ".tar.gz", ".tgz", ".tar"}) {
+                    try {
+                        extractAndReturnBiggest(download(new URL(base + ending), Paths.get(binary().toString() + ending)), binaryPath);
+                        break;
+                    } catch (final Exception ignored) {
+                        Files.deleteIfExists(Paths.get(binary().toString() + ending));
+                        // ignored
+                    }
+                }
+            }
         }
+
+        if (Files.notExists(binaryPath))
+            throw new NatsDownloadException("Could not download or extract NATS binary [" + binaryPath + "]");
+
         //noinspection ResultOfMethodCallIgnored
         binaryPath.toFile().setExecutable(true);
         SystemUtil.setFilePermissions(binaryPath, OWNER_EXECUTE, OTHERS_EXECUTE, OWNER_READ, OTHERS_READ, OWNER_WRITE, OTHERS_WRITE);
         return binaryPath;
+    }
+
+    public static String replaceEnds(final String str, final String... endings) {
+        String result = str;
+        for (String ending : endings) {
+            if (result.toLowerCase().endsWith(ending.toLowerCase())) {
+                result = result.substring(0, result.length() - ending.length());
+            }
+        }
+        return result;
     }
 
     protected String prepareCommand() {

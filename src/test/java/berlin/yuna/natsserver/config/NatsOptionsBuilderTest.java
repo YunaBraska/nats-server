@@ -10,12 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.Arrays.stream;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("UnitTest")
 @DisplayName("NatsServer Builder Test")
@@ -25,7 +20,7 @@ class NatsOptionsBuilderTest {
     @DisplayName("Empty Builder Test")
     void testEmptyBuilder() {
         final NatsOptions natsOptions = NatsOptions.natsBuilder().build();
-        stream(NatsConfig.values()).forEach(key -> assertThat(natsOptions.config().get(key), is(nullValue())));
+        stream(NatsConfig.values()).forEach(key -> assertThat(natsOptions.config().get(key)).isNull());
     }
 
     @Test
@@ -39,114 +34,103 @@ class NatsOptionsBuilderTest {
         final var customArgs = new String[]{"CC", "DD"};
         final var version = NatsVersion.values()[0];
 
-        //CONFIG_MAP
-        assertThat(options.configMap(), is(notNullValue()));
-        assertThat(options.configMap().size(), is(0));
+        assertThat(options.configMap()).isNotNull().isEmpty();
         options.configMap(Map.of(NatsConfig.NET, "0.0.0.0"));
-        assertThat(options.configMap().size(), is(1));
+        assertThat(options.configMap()).hasSize(1);
         options.config(NatsConfig.NET, "1.2.3.4");
-        assertThat(options.configMap().get(NatsConfig.NET), is("1.2.3.4"));
+        assertThat(options.configMap().get(NatsConfig.NET)).isEqualTo("1.2.3.4");
         options.config("NET", "5.6.7.8");
-        assertThat(options.configMap().get(NatsConfig.NET), is("5.6.7.8"));
+        assertThat(options.configMap().get(NatsConfig.NET)).isEqualTo("5.6.7.8");
 
-        //PORT
-        assertThat(options.port(), is(nullValue()));
+        assertThat(options.port()).isNull();
         options.port(port);
-        assertThat(options.port(), is(equalTo(port)));
+        assertThat(options.port()).isEqualTo(port);
 
-        //VERSION
-        assertThat(options.version(), is(nullValue()));
+        assertThat(options.version()).isNull();
         options.version("123");
-        assertThat(options.version(), is(equalTo("v123")));
+        assertThat(options.version()).isEqualTo("v123");
         options.version(version);
-        assertThat(options.version(), is(equalTo(version.value())));
+        assertThat(options.version()).isEqualTo(version.value());
 
-        //JETSTREAM
-        assertThat(options.jetStream(), is(nullValue()));
+        assertThat(options.jetStream()).isNull();
         options.jetStream(false);
-        assertThat(options.jetStream(), is(equalTo(false)));
-
+        assertThat(options.jetStream()).isFalse();
         options.jetStream(true);
-        assertThat(options.jetStream(), is(equalTo(true)));
+        assertThat(options.jetStream()).isTrue();
 
-        //DEBUG
-        assertThat(options.debug(), is(nullValue()));
+        assertThat(options.debug()).isNull();
         options.debug(false);
-        assertThat(options.debug(), is(equalTo(false)));
-
+        assertThat(options.debug()).isFalse();
         options.debug(true);
-        assertThat(options.debug(), is(equalTo(true)));
+        assertThat(options.debug()).isTrue();
 
-        //AUTOSTART
-        assertThat(options.autostart(), is(nullValue()));
+        assertThat(options.autostart()).isNull();
         options.autostart(false);
-        assertThat(options.autostart(), is(equalTo(false)));
+        assertThat(options.autostart()).isFalse();
+
+        assertThat(options.shutdownHook()).isNull();
+        options.shutdownHook(false);
+        assertThat(options.shutdownHook()).isFalse();
+        options.shutdownHook(true);
+        assertThat(options.shutdownHook()).isTrue();
 
         options.autostart(true);
-        assertThat(options.autostart(), is(equalTo(true)));
+        assertThat(options.autostart()).isTrue();
 
-        //CONFIG_FILE
-        assertThat(options.configFile(), is(nullValue()));
+        assertThat(options.configFile()).isNull();
         options.configFile(configFile);
-        assertThat(options.configFile(), is(equalTo(configFile)));
+        assertThat(options.configFile()).isEqualTo(configFile);
 
-        //CONFIG_PROPERTY_FILE
-        assertThat(options.configPropertyFile(), is(nullValue()));
+        assertThat(options.configPropertyFile()).isNull();
         options.configPropertyFile(configFile);
-        assertThat(options.configPropertyFile(), is(equalTo(configFile)));
+        assertThat(options.configPropertyFile()).isEqualTo(configFile);
 
-        //CUSTOM_ARGS
-        assertThat(options.customArgs(), is(nullValue()));
+        assertThat(options.customArgs()).isNull();
         options.addArgs("aa", "bb");
         options.addArgs("cc");
-        assertThat(options.customArgs(), is(equalTo(new String[]{"aa", "bb", "cc"})));
+        assertThat(options.customArgs()).containsExactly("aa", "bb", "cc");
 
         options.customArgs(customArgs);
-        assertThat(options.customArgs(), is(equalTo(customArgs)));
+        assertThat(options.customArgs()).containsExactly(customArgs);
 
-        //LOGGER
-        assertThat(options.logger(), is(nullValue()));
+        assertThat(options.logger()).isNull();
         options.logger(logger);
-        assertThat(options.logger(), is(equalTo(logger)));
+        assertThat(options.logger()).isSameAs(logger);
 
-        //LOG_LEVEL
-        assertThat(options.logLevel(), is(nullValue()));
+        assertThat(options.logLevel()).isNull();
         options.logLevel(logLevel);
-        assertThat(options.logLevel(), is(equalTo(logLevel)));
+        assertThat(options.logLevel()).isEqualTo(logLevel);
 
-        //TIMEOUT_MS
-        assertThat(options.timeoutMs(), is(nullValue()));
+        assertThat(options.timeoutMs()).isNull();
         options.timeoutMs(timeoutMs);
-        assertThat(options.timeoutMs(), is(equalTo(timeoutMs)));
+        assertThat(options.timeoutMs()).isEqualTo(timeoutMs);
 
-        //OPTIONS BUILD
-        assertThat(options.configMap().size(), is(11));
+        assertThat(options.configMap()).hasSize(12);
         final var build = options.build();
-        assertThat(build.config().size(), is(11));
+        assertThat(build.config()).hasSize(12);
 
-        assertThat(build.version(), is(equalTo(version.value())));
-        assertThat(build.port(), is(equalTo(port)));
-        assertThat(build.jetStream(), is(equalTo(true)));
-        assertThat(build.debug(), is(equalTo(true)));
-        assertThat(build.config().get(NatsConfig.NATS_AUTOSTART), is(equalTo("true")));
-        assertThat(build.configFile(), is(equalTo(configFile)));
-        assertThat(build.config().get(NatsConfig.NATS_PROPERTY_FILE), is(equalTo(configFile.toString())));
-        assertThat(build.customArgs(), is(equalTo(customArgs)));
-        assertThat(build.logger(), is(equalTo(logger)));
-        assertThat(build.logLevel(), is(equalTo(logLevel)));
-        assertThat(build.config().get(NatsConfig.NATS_TIMEOUT_MS), is(equalTo(String.valueOf(timeoutMs))));
+        assertThat(build.version()).isEqualTo(version.value());
+        assertThat(build.port()).isEqualTo(port);
+        assertThat(build.jetStream()).isTrue();
+        assertThat(build.debug()).isTrue();
+        assertThat(build.config().get(NatsConfig.NATS_AUTOSTART)).isEqualTo("true");
+        assertThat(build.configFile()).isEqualTo(configFile);
+        assertThat(build.config().get(NatsConfig.NATS_PROPERTY_FILE)).isEqualTo(configFile.toString());
+        assertThat(build.customArgs()).containsExactly(customArgs);
+        assertThat(build.logger()).isSameAs(logger);
+        assertThat(build.logLevel()).isEqualTo(logLevel);
+        assertThat(build.config().get(NatsConfig.NATS_TIMEOUT_MS)).isEqualTo(String.valueOf(timeoutMs));
 
-        //OPTIONS INTERFACE
-        assertThat(options.configMap().size(), is(11));
+        assertThat(options.configMap()).hasSize(12);
         final var interFace = (io.nats.commons.NatsOptions) options.build();
 
-        assertThat(interFace.port(), is(equalTo(port)));
-        assertThat(interFace.jetStream(), is(equalTo(true)));
-        assertThat(interFace.debug(), is(equalTo(true)));
-        assertThat(interFace.configFile(), is(equalTo(configFile)));
-        assertThat(interFace.customArgs(), is(equalTo(customArgs)));
-        assertThat(interFace.logger(), is(equalTo(logger)));
-        assertThat(interFace.logLevel(), is(equalTo(logLevel)));
+        assertThat(interFace.port()).isEqualTo(port);
+        assertThat(interFace.jetStream()).isTrue();
+        assertThat(interFace.debug()).isTrue();
+        assertThat(interFace.configFile()).isEqualTo(configFile);
+        assertThat(interFace.customArgs()).containsExactly(customArgs);
+        assertThat(interFace.logger()).isSameAs(logger);
+        assertThat(interFace.logLevel()).isEqualTo(logLevel);
     }
 
     @Test
@@ -154,12 +138,12 @@ class NatsOptionsBuilderTest {
     void coverageTest() {
         final var builder1 = NatsOptions.natsBuilder().logger(Logger.getLogger("AA"));
         final var builder2 = NatsOptions.natsBuilder().logger(Logger.getLogger("BB"));
-        assertThat(builder1, is(equalTo(builder1)));
-        assertThat(builder1, is(not(equalTo(builder2))));
-        assertThat(builder1.hashCode(), is(not(0)));
+        assertThat(builder1).isEqualTo(builder1);
+        assertThat(builder1).isNotEqualTo(builder2);
+        assertThat(builder1.hashCode()).isNotZero();
 
-        assertThat(builder1.build(), is(equalTo(builder1.build())));
-        assertThat(builder1.build(), is(not(equalTo(builder2.build()))));
-        assertThat(builder1.build().hashCode(), is(not(0)));
+        assertThat(builder1.build()).isEqualTo(builder1.build());
+        assertThat(builder1.build()).isNotEqualTo(builder2.build());
+        assertThat(builder1.build().hashCode()).isNotZero();
     }
 }

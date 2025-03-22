@@ -5,20 +5,27 @@ import berlin.yuna.natsserver.config.NatsConfig;
 import berlin.yuna.natsserver.model.MapValue;
 import berlin.yuna.natsserver.model.exception.NatsDownloadException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -26,7 +33,9 @@ import java.util.zip.ZipFile;
 import static berlin.yuna.clu.logic.SystemUtil.OS;
 import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH;
 import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH_TYPE;
+import static berlin.yuna.natsserver.logic.Decompressor.extractAndReturnBiggest;
 import static java.nio.channels.Channels.newChannel;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Comparator.comparingLong;
 import static java.util.Optional.ofNullable;
 
@@ -73,7 +82,7 @@ public class NatsUtils {
             fos.getChannel().transferFrom(newChannel(source.openStream()), 0, Long.MAX_VALUE);
             return target;
         } catch (Exception e) {
-            throw new NatsDownloadException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -87,6 +96,8 @@ public class NatsUtils {
         Files.deleteIfExists(source);
         return target;
     }
+
+
 
     public static void validatePort(final int port, final long timeoutMs, final boolean untilFree, final Supplier<Exception> onFail, final BooleanSupplier disrupt) throws Exception {
         if (!waitForPort(port, timeoutMs, untilFree, disrupt)) {

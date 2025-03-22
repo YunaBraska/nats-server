@@ -23,29 +23,13 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static berlin.yuna.natsserver.config.NatsConfig.NATS_DOWNLOAD_URL;
-import static berlin.yuna.natsserver.config.NatsConfig.NATS_LOG_NAME;
-import static berlin.yuna.natsserver.config.NatsConfig.NATS_PROPERTY_FILE;
-import static berlin.yuna.natsserver.config.NatsConfig.NATS_SYSTEM;
-import static berlin.yuna.natsserver.config.NatsConfig.NATS_VERSION;
-import static berlin.yuna.natsserver.config.NatsConfig.NET;
-import static berlin.yuna.natsserver.config.NatsConfig.PORT;
+import static berlin.yuna.natsserver.config.NatsConfig.*;
 import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
 import static berlin.yuna.natsserver.logic.Nats.NATS_PREFIX;
 import static berlin.yuna.natsserver.logic.NatsUtils.getSystem;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.endsWith;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.io.FileMatchers.anExistingFile;
+import static org.assertj.core.api.Assertions.*;
 
 @Tag("UnitTest")
 @DisplayName("Nats config test")
@@ -72,12 +56,12 @@ class NatsConfigTest {
     @DisplayName("Nats default setup")
     void natsDefault() {
         final Nats nats = new Nats(noAutostart());
-        assertThat(nats.pid(), is(-1));
-        assertThat(nats.pidFile().toString(), is(endsWith(PORT.defaultValue() + ".pid")));
-        assertThat(nats.url(), is(equalTo("nats://" + NET.defaultValue() + ":" + PORT.defaultValue())));
-        assertThat(nats.port(), is(equalTo(PORT.defaultValue())));
-        assertThat(nats.binary().toString(), is(containsString(System.getProperty("java.io.tmpdir"))));
-        assertThat(nats.binary().toString(), is(containsString(((String) NATS_LOG_NAME.defaultValue()).toLowerCase())));
+        assertThat(nats.pid()).isEqualTo(-1);
+        assertThat(nats.pidFile().toString()).endsWith(PORT.defaultValue() + ".pid");
+        assertThat(nats.url()).isEqualTo("nats://" + NET.defaultValue() + ":" + PORT.defaultValue());
+        assertThat(nats.port()).isEqualTo(PORT.defaultValue());
+        assertThat(nats.binary().toString()).contains(System.getProperty("java.io.tmpdir"));
+        assertThat(nats.binary().toString()).contains(((String) NATS_LOG_NAME.defaultValue()).toLowerCase());
     }
 
     @Test
@@ -87,7 +71,6 @@ class NatsConfigTest {
         System.setProperty(NATS_LOG_NAME.name(), CUSTOM_LOG_NAME);
         System.setProperty(NATS_PREFIX + NatsConfig.PORT, CUSTOM_PORT);
         System.setProperty(NATS_PREFIX + NET, CUSTOM_NET);
-
         assertCustomConfig(new Nats(noAutostart()));
     }
 
@@ -99,8 +82,7 @@ class NatsConfigTest {
                 .config(NATS_LOG_NAME, CUSTOM_LOG_NAME)
                 .config(PORT, CUSTOM_PORT)
                 .config(NET, CUSTOM_NET)
-                .build()
-        );
+                .build());
         assertCustomConfig(nats);
     }
 
@@ -128,7 +110,7 @@ class NatsConfigTest {
         System.setProperty(NATS_PROPERTY_FILE.name(), customPropertiesFile);
         final Nats nats = new Nats(noAutostart());
         assertCustomConfig(nats);
-        assertThat(nats.configPropertyFile(), is(notNullValue()));
+        assertThat(nats.configPropertyFile()).isNotNull();
     }
 
     @Test
@@ -137,7 +119,7 @@ class NatsConfigTest {
         System.setProperty(NATS_PROPERTY_FILE.name(), "custom.properties");
         final Nats nats = new Nats(noAutostart());
         assertCustomConfig(nats);
-        assertThat(nats.configPropertyFile(), is(notNullValue()));
+        assertThat(nats.configPropertyFile()).isNotNull();
     }
 
     @Test
@@ -147,7 +129,7 @@ class NatsConfigTest {
         Files.deleteIfExists(defaultFile);
 
         Files.write(defaultFile, "NET=\"default nats file\"".getBytes());
-        assertThat(new Nats(noAutostart()).getValue(NET), is(equalTo("default nats file")));
+        assertThat(new Nats(noAutostart()).getValue(NET)).isEqualTo("default nats file");
 
         Files.deleteIfExists(defaultFile);
     }
@@ -156,7 +138,7 @@ class NatsConfigTest {
     @DisplayName("Nats non existing property file")
     void propertyNonExistingFileConfig() {
         System.setProperty(NATS_PROPERTY_FILE.name(), "invalid");
-        assertThat(new Nats(noAutostart()).pidFile().toString(), is(endsWith(PORT.defaultValue() + ".pid")));
+        assertThat(new Nats(noAutostart()).pidFile().toString()).endsWith(PORT.defaultValue() + ".pid");
     }
 
     @Test
@@ -164,11 +146,7 @@ class NatsConfigTest {
     void prepareCommand() {
         System.setProperty(NATS_PROPERTY_FILE.name(), customPropertiesFile);
         final String command = new Nats(noAutostart()).prepareCommand();
-        assertThat(command, containsString(CUSTOM_NET));
-        assertThat(command, containsString(CUSTOM_PORT));
-        assertThat(command, containsString(CUSTOM_LOG_NAME));
-        assertThat(command, containsString(getSystem()));
-        assertThat(command, containsString("--customArg1=123 --customArg2=456"));
+        assertThat(command).contains(CUSTOM_NET, CUSTOM_PORT, CUSTOM_LOG_NAME, getSystem(), "--customArg1=123 --customArg2=456");
     }
 
     @Test
@@ -178,8 +156,8 @@ class NatsConfigTest {
         final Nats nats = new Nats(noAutostartBuilder().config(NATS_DOWNLOAD_URL, inputFile.toUri().toString()).build());
 
         nats.downloadNats();
-        assertThat(nats.binary().toFile(), is(anExistingFile()));
-        assertThat(Files.readAllLines(nats.binary()), is(equalTo(Files.readAllLines(inputFile))));
+        assertThat(nats.binary().toFile()).exists();
+        assertThat(Files.readAllLines(nats.binary())).isEqualTo(Files.readAllLines(inputFile));
     }
 
     @Test
@@ -190,8 +168,8 @@ class NatsConfigTest {
         final Nats nats = new Nats(noAutostartBuilder().config(NATS_DOWNLOAD_URL, inputZipFile.toUri().toString()).build());
 
         nats.downloadNats();
-        assertThat(nats.binary().toFile(), is(anExistingFile()));
-        assertThat(Files.readAllLines(nats.binary()), is(equalTo(Files.readAllLines(inputFile))));
+        assertThat(nats.binary().toFile()).exists();
+        assertThat(Files.readAllLines(nats.binary())).isEqualTo(Files.readAllLines(inputFile));
     }
 
     @Test
@@ -203,15 +181,15 @@ class NatsConfigTest {
         Files.write(nats.binary(), "Should not be overwritten".getBytes());
 
         nats.downloadNats();
-        assertThat(nats.binary().toFile(), is(anExistingFile()));
-        assertThat(Files.readAllLines(nats.binary()), is(equalTo(Collections.singletonList("Should not be overwritten"))));
+        assertThat(nats.binary().toFile()).exists();
+        assertThat(Files.readAllLines(nats.binary())).containsExactly("Should not be overwritten");
     }
 
     @Test
     @DisplayName("findFreePort")
     void findFreePort() {
         try (final Nats nats = new Nats(-1)) {
-            assertThat(nats.port(), is(greaterThan((int) PORT.defaultValue())));
+            assertThat(nats.port()).isGreaterThan((int) PORT.defaultValue());
         }
     }
 
@@ -220,38 +198,39 @@ class NatsConfigTest {
     void deletePidFile() throws Exception {
         try (final Nats nats = new Nats(noAutostart())) {
             Files.createFile(nats.pidFile());
-            assertThat(nats.pidFile().toFile(), is(anExistingFile()));
+            assertThat(nats.pidFile().toFile()).exists();
             nats.deletePidFile();
-            assertThat(nats.pidFile().toFile(), is(not(anExistingFile())));
+            assertThat(nats.pidFile().toFile()).doesNotExist();
         }
     }
 
     @Test
     @DisplayName("to String")
     void toStringTest() {
-        assertThat(new Nats(noAutostart()).toString(), containsString(String.valueOf(PORT.defaultValue())));
+        assertThat(new Nats(noAutostart()).toString()).contains(String.valueOf(PORT.defaultValue()));
     }
 
     @Test
     @DisplayName("Constructor with customArgs")
     void constructor_customArgs() {
         final Nats nats = new Nats(noAutostartBuilder().addArgs("--arg1=false", "--arg2=true").build());
-        assertThat(asList(nats.customArgs()), hasItems("--arg1=false", "--arg2=true"));
-        assertThat(nats.prepareCommand(), containsString("--arg1=false --arg2=true"));
+        assertThat(asList(nats.customArgs())).contains("--arg1=false", "--arg2=true");
+        assertThat(nats.prepareCommand()).contains("--arg1=false --arg2=true");
     }
 
     @Test
     @DisplayName("Constructor with customArgs")
     void constructor_port() {
         final Nats nats = new Nats(noAutostartBuilder().port(parseInt(CUSTOM_PORT)).build());
-        assertThat(nats.prepareCommand(), containsString(CUSTOM_PORT));
+        assertThat(nats.prepareCommand()).contains(CUSTOM_PORT);
     }
 
     @Test
     @DisplayName("Constructor with customArgs")
     void config() {
         final Nats nats = new Nats(noAutostart());
-        assertThat(nats.configMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().value())), is(equalTo(nats.config())));
+        assertThat(nats.configMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().value())))
+                .isEqualTo(nats.config());
     }
 
     private Path zipFile(final Path source) throws IOException {
@@ -264,31 +243,28 @@ class NatsConfigTest {
     }
 
     private void assertCustomConfig(final Nats nats) {
-        assertThat(nats.pidFile().toString(), is(endsWith(CUSTOM_PORT + ".pid")));
-        assertThat(nats.url(), is(equalTo("nats://" + CUSTOM_NET + ":" + CUSTOM_PORT)));
-        assertThat(String.valueOf(nats.port()), is(equalTo(CUSTOM_PORT)));
-        assertThat(nats.binary().toString(), is(containsString(System.getProperty("java.io.tmpdir"))));
-        assertThat(nats.binary().toString(), is(containsString(CUSTOM_LOG_NAME)));
-        assertThat(nats.binary().toString(), not(containsString("null")));
-        assertThat(nats.downloadUrl(), is(containsString(CUSTOM_VERSION)));
-        assertThat(nats.downloadUrl(), is(containsString(nats.configMap.get(NATS_SYSTEM).value())));
+        assertThat(nats.pidFile().toString()).endsWith(CUSTOM_PORT + ".pid");
+        assertThat(nats.url()).isEqualTo("nats://" + CUSTOM_NET + ":" + CUSTOM_PORT);
+        assertThat(String.valueOf(nats.port())).isEqualTo(CUSTOM_PORT);
+        assertThat(nats.binary().toString()).contains(System.getProperty("java.io.tmpdir"), CUSTOM_LOG_NAME);
+        assertThat(nats.binary().toString()).doesNotContain("null");
+        assertThat(nats.downloadUrl()).contains(CUSTOM_VERSION, nats.configMap.get(NATS_SYSTEM).value().toString());
         assertCustomConfigNatsInterface(nats);
         nats.close();
     }
 
     private void assertCustomConfigNatsInterface(final NatsInterface nats) {
-        assertThat(nats.url(), is(equalTo("nats://example.com:123456")));
-        assertThat(nats.jetStream(), is(equalTo(false)));
-        assertThat(nats.debug(), is(equalTo(false)));
-        assertThat(nats.binary().toString(), is(containsString(System.getProperty("java.io.tmpdir"))));
-        assertThat(nats.binary().toString(), is(containsString(CUSTOM_LOG_NAME)));
-        assertThat(nats.binary().toString(), not(containsString("null")));
-        assertThat(nats.customArgs().length, is(notNullValue()));
-        assertThat(nats.logger(), is(notNullValue()));
-        assertThat(nats.loggingLevel(), is(nullValue()));
-        assertThat(nats.port(), is(equalTo(parseInt(CUSTOM_PORT))));
-        assertThat(nats.process(), is(nullValue()));
-        assertThat(nats.configFile(), is(nullValue()));
+        assertThat(nats.url()).isEqualTo("nats://example.com:123456");
+        assertThat(nats.jetStream()).isFalse();
+        assertThat(nats.debug()).isFalse();
+        assertThat(nats.binary().toString()).contains(System.getProperty("java.io.tmpdir"), CUSTOM_LOG_NAME);
+        assertThat(nats.binary().toString()).doesNotContain("null");
+        assertThat(nats.customArgs()).isNotNull();
+        assertThat(nats.logger()).isNotNull();
+        assertThat(nats.loggingLevel()).isNull();
+        assertThat(nats.port()).isEqualTo(parseInt(CUSTOM_PORT));
+        assertThat(nats.process()).isNull();
+        assertThat(nats.configFile()).isNull();
     }
 
     private void purge() {

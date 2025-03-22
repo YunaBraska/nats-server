@@ -70,13 +70,14 @@ public enum NatsConfig {
 
     //WRAPPER configs
     NATS_AUTOSTART(null, true, Boolean.class, "[true] == auto closable, [false] == manual use `.start()` method (default: true)"),
+    NATS_SHUTDOWN_HOOK(null, true, Boolean.class, "[true] == registers a shutdown hook, [false] == manual use `.stop()` method (default: true)"),
     NATS_LOG_LEVEL(null, null, String.class, "java log level e.g. [OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL]"),
     NATS_TIMEOUT_MS(null, 10000, String.class, "true = auto closable, false manual use `.start()` method"),
     NATS_SYSTEM(null, null, String.class, "suffix for binary path"),
 
     NATS_LOG_NAME(null, Nats.class.getSimpleName(), String.class, "java wrapper name"),
 
-    NATS_VERSION(null, "v2.10.26", String.class, "Overwrites Nats server version on path"),
+    NATS_VERSION(null, "v2.11.0", String.class, "Overwrites Nats server version on path"),
 
     NATS_DOWNLOAD_URL(null, "https://github.com/nats-io/nats-server/releases/download/%" + NATS_VERSION.name() + "%/nats-server-%" + NATS_VERSION.name() + "%-%" + NATS_SYSTEM.name() + "%.zip", URL.class, "Path to Nats binary or zip file"),
 
