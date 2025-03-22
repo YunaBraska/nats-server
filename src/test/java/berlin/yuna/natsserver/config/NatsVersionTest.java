@@ -64,7 +64,7 @@ class NatsVersionTest {
     }
 
     private static String toEnum(final List<String> tags) {
-        return tags.stream().map(NatsVersionTest::toEnum).sorted(Collections.reverseOrder()).limit(100).collect(Collectors.joining(",\n", "", ";"));
+        return tags.stream().sorted(Collections.reverseOrder()).limit(100).map(NatsVersionTest::toEnum).collect(Collectors.joining(",\n", "", ";"));
     }
 
     private static String toEnum(final String tag) {
