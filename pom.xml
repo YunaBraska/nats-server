@@ -44,9 +44,9 @@
         <command-line-util.version>2.1.43</command-line-util.version>
 
         <!-- TEST -->
-        <junit.version>5.12.0</junit.version>
+        <junit.version>5.12.1</junit.version>
         <assertj-core.version>3.27.3</assertj-core.version>
-        <junit-launcher.version>1.12.0</junit-launcher.version>
+        <junit-launcher.version>1.12.1</junit-launcher.version>
 
         <!-- BUILD -->
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
