@@ -6,7 +6,7 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-server</artifactId>
-    <version>2.11.1-rc.1</version>
+    <version>2.11.1-binary</version>
     <packaging>jar</packaging>
 
     <name>nats-server</name>
