@@ -41,7 +41,7 @@
         <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <!-- PROD -->
-        <command-line-util.version>2.1.44</command-line-util.version>
+        <command-line-util.version>2.1.45</command-line-util.version>
 
         <!-- TEST -->
         <junit.version>5.12.1</junit.version>
