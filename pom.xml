@@ -6,7 +6,7 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-server</artifactId>
-    <version>2.11.7-rc.1</version>
+    <version>2.11.7</version>
     <packaging>jar</packaging>
 
     <name>nats-server</name>
@@ -45,7 +45,7 @@
 
         <!-- TEST -->
         <junit.version>5.13.4</junit.version>
-        <assertj-core.version>3.27.3</assertj-core.version>
+        <assertj-core.version>3.27.4</assertj-core.version>
         <junit-launcher.version>1.13.4</junit-launcher.version>
 
         <!-- BUILD -->
