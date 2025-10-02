@@ -60,6 +60,7 @@ public enum NatsVersion {
     V2_2_2("v2.2.2"),
     V2_2_1("v2.2.1"),
     V2_2_0("v2.2.0"),
+    V2_12_1_RC_1("v2.12.1-RC.1"),
     V2_12_0_PREVIEW_2("v2.12.0-preview.2"),
     V2_12_0_PREVIEW_1("v2.12.0-preview.1"),
     V2_12_0_RC_6("v2.12.0-RC.6"),
@@ -97,11 +98,10 @@ public enum NatsVersion {
     V2_11_2_RC_2("v2.11.2-RC.2"),
     V2_11_2_RC_1("v2.11.2-RC.1"),
     V2_11_2("v2.11.2"),
+    V2_11_10_RC_1("v2.11.10-RC.1"),
+    V2_11_10("v2.11.10"),
     V2_11_1_BINARY("v2.11.1-binary"),
-    V2_11_1("v2.11.1"),
-    V2_11_0_PREVIEW_2("v2.11.0-preview.2"),
-    V2_11_0_PREVIEW_1("v2.11.0-preview.1"),
-    V2_11_0_DEV("v2.11.0-dev");
+    V2_11_1("v2.11.1");
 
     final String value;
 
