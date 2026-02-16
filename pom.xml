@@ -6,7 +6,7 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-server</artifactId>
-    <version>2.12.4</version>
+    <version>2.12.5-rc.0</version>
     <packaging>jar</packaging>
 
     <name>nats-server</name>
@@ -41,12 +41,12 @@
         <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <!-- PROD -->
-        <command-line-util.version>2026.02.0330522</command-line-util.version>
+        <command-line-util.version>2026.02.0470524</command-line-util.version>
 
         <!-- TEST -->
-        <junit.version>6.0.2</junit.version>
+        <junit.version>6.0.3</junit.version>
         <assertj-core.version>3.27.7</assertj-core.version>
-        <junit-launcher.version>6.0.2</junit-launcher.version>
+        <junit-launcher.version>6.0.3</junit-launcher.version>
 
         <!-- BUILD -->
         <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
