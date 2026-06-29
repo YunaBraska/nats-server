@@ -6,7 +6,7 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-server</artifactId>
-    <version>2.14.3-rc.0</version>
+    <version>2.14.3-rc.1</version>
     <packaging>jar</packaging>
 
     <name>nats-server</name>
@@ -41,7 +41,7 @@
         <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <!-- PROD -->
-        <command-line-util.version>2026.06.1570649</command-line-util.version>
+        <command-line-util.version>2026.06.1800855</command-line-util.version>
 
         <!-- TEST -->
         <junit.version>6.1.1</junit.version>
