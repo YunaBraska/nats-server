@@ -104,11 +104,7 @@ class NatsConfigComponentTest {
                         con.setRequestProperty("Authorization", "Token " + token);
                     });
 
-            final String previousVersion = NATS_VERSION.defaultValueStr();
             final String newVersion = updateNatsVersion(configJavaFile, read(con.getInputStream()));
-            if (!requireNonNull(previousVersion).equals(newVersion)) {
-                Files.write(Paths.get(System.getProperty("user.dir"), "version.txt"), (newVersion.startsWith("v") ? newVersion.substring(1) : newVersion).getBytes());
-            }
             return newVersion;
         }
     }
