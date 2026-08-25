@@ -67,7 +67,7 @@ jobs:
             exit 0
           fi
           ${{ steps.java_info.outputs.cmd }} -B test
-          if git diff --quiet -- src/main/java/berlin/yuna/natsserver/config version.txt; then
+          if git diff --quiet -- src/main/java/berlin/yuna/natsserver/config; then
             echo 'NATS Server is current.'
             exit 0
           fi
@@ -78,7 +78,7 @@ jobs:
           git config user.name 'Kira Bot'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git switch -c "${branch}"
-          git add -- src/main/java/berlin/yuna/natsserver/config version.txt
+          git add -- src/main/java/berlin/yuna/natsserver/config
           git commit -m 'build: update NATS server'
           git push origin "${branch}"
           gh pr create --repo "${GITHUB_REPOSITORY}" --base "${{ github.event.repository.default_branch }}" --head "${branch}" --title 'build: update NATS server' --body 'Updates NATS server sources.'
