@@ -9,10 +9,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,6 +47,16 @@ class NatsVersionTest {
         assertThat(versions)
                 .contains("V2_15_0_PREVIEW_1(\"v2.15.0-preview.1\")", "V2_14_5(\"2.14.5\")")
                 .doesNotContain("V2_14_5_RC_1", "V2_14_4_BUILD_1", "V2_14_04", "V2_14_5_01");
+    }
+
+    @Test
+    void ordersVersionsBySemVerBeforeApplyingTheLimit() {
+        final String versions = toEnum(List.of("v2.9.9", "v2.15.0-preview.2", "v2.15.0-preview.10", "v3.0.0-alpha.1", "v3.0.0-beta.1"));
+
+        assertThat(compareVersions("v2.15.0", "v2.15.0-preview.1")).isNegative();
+        assertThat(versions.indexOf("V3_0_0_BETA_1")).isLessThan(versions.indexOf("V3_0_0_ALPHA_1"));
+        assertThat(versions.indexOf("V2_15_0_PREVIEW_10")).isLessThan(versions.indexOf("V2_15_0_PREVIEW_2"));
+        assertThat(versions.indexOf("V2_15_0_PREVIEW_2")).isLessThan(versions.indexOf("V2_9_9"));
     }
 
     private static void writeVersions(final List<String> tags) throws IOException {
@@ -90,7 +100,7 @@ class NatsVersionTest {
         return tags.stream()
                 .filter(NatsVersionTest::isVersion)
                 .filter(tag -> isStable(tag) || !stableVersions.contains(releaseLine(tag)))
-                .sorted(Collections.reverseOrder())
+                .sorted(NatsVersionTest::compareVersions)
                 .limit(100)
                 .map(NatsVersionTest::toEnum)
                 .collect(Collectors.joining(",\n", "", ";"));
@@ -112,6 +122,49 @@ class NatsVersionTest {
     private static String releaseLine(final String tag) {
         final Matcher matcher = VERSION.matcher(tag);
         return matcher.matches() ? matcher.group("release") : "";
+    }
+
+    private static int compareVersions(final String left, final String right) {
+        final Matcher leftMatcher = VERSION.matcher(left);
+        final Matcher rightMatcher = VERSION.matcher(right);
+        leftMatcher.matches();
+        rightMatcher.matches();
+        final String[] leftRelease = leftMatcher.group("release").split("\\.");
+        final String[] rightRelease = rightMatcher.group("release").split("\\.");
+        for (int index = 0; index < leftRelease.length; index++) {
+            final int comparison = new BigInteger(rightRelease[index]).compareTo(new BigInteger(leftRelease[index]));
+            if (comparison != 0) {
+                return comparison;
+            }
+        }
+
+        final String leftPreRelease = leftMatcher.group("preRelease");
+        final String rightPreRelease = rightMatcher.group("preRelease");
+        if (leftPreRelease == null || rightPreRelease == null) {
+            return leftPreRelease == null ? (rightPreRelease == null ? 0 : -1) : 1;
+        }
+
+        final String[] leftIdentifiers = leftPreRelease.substring(1).split("\\.");
+        final String[] rightIdentifiers = rightPreRelease.substring(1).split("\\.");
+        for (int index = 0; index < Math.min(leftIdentifiers.length, rightIdentifiers.length); index++) {
+            final int comparison = compareIdentifier(leftIdentifiers[index], rightIdentifiers[index]);
+            if (comparison != 0) {
+                return comparison;
+            }
+        }
+        return Integer.compare(rightIdentifiers.length, leftIdentifiers.length);
+    }
+
+    private static int compareIdentifier(final String left, final String right) {
+        final boolean leftNumeric = left.chars().allMatch(Character::isDigit);
+        final boolean rightNumeric = right.chars().allMatch(Character::isDigit);
+        if (leftNumeric && rightNumeric) {
+            return new BigInteger(right).compareTo(new BigInteger(left));
+        }
+        if (leftNumeric || rightNumeric) {
+            return leftNumeric ? 1 : -1;
+        }
+        return right.compareTo(left);
     }
 
     private static String callGET(final String urlString) throws IOException {
