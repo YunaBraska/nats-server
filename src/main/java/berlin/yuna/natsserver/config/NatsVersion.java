@@ -3,7 +3,7 @@ package berlin.yuna.natsserver.config;
 public enum NatsVersion {
 
     V2_15_0_PREVIEW_1("v2.15.0-preview.1"),
-    V2_14_6_RC_1("v2.14.6-RC.1"),
+    V2_14_6("v2.14.6"),
     V2_14_5("v2.14.5"),
     V2_14_4("v2.14.4"),
     V2_14_3("v2.14.3"),
