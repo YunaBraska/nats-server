@@ -94,6 +94,8 @@ class NatsConfigComponentTest {
             final URL url = new URL("https://api.github.com/repos/nats-io/nats-server/releases/latest");
             final HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
+            con.setConnectTimeout(10_000);
+            con.setReadTimeout(10_000);
             con.setRequestProperty("Accept", "application/vnd.github+json");
             con.setRequestProperty("User-Agent", "YunaBraskaRestClient");
             ofNullable(System.getProperty("GITHUB_TOKEN", System.getenv("GITHUB_TOKEN")))
