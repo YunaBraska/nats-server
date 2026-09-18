@@ -26,6 +26,7 @@ public enum NatsConfig {
     // Logging Options
     LOG("--log", null, Path.class, "File to redirect log output"),
     LOG_TIMELOG_TIME("--logtime", null, Boolean.class, "Timestamp log entries (default: true)"),
+    LOGTIME_UTC("--logtime_utc", null, Boolean.class, "Timestamps in UTC instead of local timezone (default: false)"),
     SYSLOG("--syslog", false, SilentBoolean.class, "Log to syslog or windows event log" + System.lineSeparator() + "(default: false)"),
     REMOTE_SYSLOG("--remote_syslog", null, String.class, "Syslog server addr (udp://localhost:514)"),
     DEBUG("--debug", false, SilentBoolean.class, "Enable debugging output" + System.lineSeparator() + "(default: false)"),
@@ -77,7 +78,7 @@ public enum NatsConfig {
 
     NATS_LOG_NAME(null, Nats.class.getSimpleName(), String.class, "java wrapper name"),
 
-    NATS_VERSION(null, "v2.14.6", String.class, "Overwrites Nats server version on path"),
+    NATS_VERSION(null, "v2.15.0", String.class, "Overwrites Nats server version on path"),
 
     NATS_DOWNLOAD_URL(null, "https://github.com/nats-io/nats-server/releases/download/%" + NATS_VERSION.name() + "%/nats-server-%" + NATS_VERSION.name() + "%-%" + NATS_SYSTEM.name() + "%.zip", URL.class, "Path to Nats binary or zip file"),
 
