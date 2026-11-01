@@ -2,8 +2,10 @@ package berlin.yuna.natsserver.config;
 
 public enum NatsVersion {
 
+    V2_15_2("v2.15.2"),
     V2_15_1("v2.15.1"),
     V2_15_0("v2.15.0"),
+    V2_14_9("v2.14.9"),
     V2_14_8("v2.14.8"),
     V2_14_7("v2.14.7"),
     V2_14_6("v2.14.6"),
@@ -99,9 +101,7 @@ public enum NatsVersion {
     V2_9_1("v2.9.1"),
     V2_9_0("v2.9.0"),
     V2_8_4("v2.8.4"),
-    V2_8_3("v2.8.3"),
-    V2_8_2("v2.8.2"),
-    V2_8_1("v2.8.1");
+    V2_8_3("v2.8.3");
 
     final String value;
 
