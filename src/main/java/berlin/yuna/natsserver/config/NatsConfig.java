@@ -19,6 +19,7 @@ public enum NatsConfig {
     HTTPS_PORT("--https_port", null, Integer.class, "Use port for https monitoring"),
     CONFIG("--config", null, Path.class, "Configuration file"),
     TEST_CONFIG("-t", false, SilentBoolean.class, "Test configuration and exit" + System.lineSeparator() + "(default: false)"),
+    TEST_RELOAD("--test_reload", null, Path.class, "With -t, test whether this configuration file can be reloaded"),
     SIGNAL("--signal", null, String.class, "Send signal to nats-server process (ldm, stop, quit, term, reopen, reload)" + System.lineSeparator() + " <pid> can be either a PID (e.g. 1) or the path to a PID file" + System.lineSeparator() + " (e.g. /var/run/nats-server.pid) e.g. stop=pid"),
     CLIENT_ADVERTISE("--client_advertise", null, String.class, "Client URL to advertise to other servers"),
     PORTS_FILE_DIR("--ports_file_dir", null, Path.class, "Creates a ports file in the specified directory (<executable_name>_<pid>.ports)."),
@@ -78,7 +79,7 @@ public enum NatsConfig {
 
     NATS_LOG_NAME(null, Nats.class.getSimpleName(), String.class, "java wrapper name"),
 
-    NATS_VERSION(null, "v2.15.2", String.class, "Overwrites Nats server version on path"),
+    NATS_VERSION(null, "v2.15.3", String.class, "Overwrites Nats server version on path"),
 
     NATS_DOWNLOAD_URL(null, "https://github.com/nats-io/nats-server/releases/download/%" + NATS_VERSION.name() + "%/nats-server-%" + NATS_VERSION.name() + "%-%" + NATS_SYSTEM.name() + "%.zip", URL.class, "Path to Nats binary or zip file"),
 
