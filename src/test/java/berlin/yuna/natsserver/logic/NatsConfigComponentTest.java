@@ -85,6 +85,13 @@ class NatsConfigComponentTest {
         assertThat(NatsConfig.NO_ADVERTISE.key()).isEqualTo("--no_advertise");
     }
 
+    @Test
+    @DisplayName("Map reload validation option")
+    void getKey_WithReloadValidation_ShouldBeSuccessful() {
+        assertThat(NatsConfig.TEST_RELOAD.key()).isEqualTo("--test_reload");
+        assertThat(NatsConfig.TEST_RELOAD.type()).isEqualTo(Path.class);
+    }
+
     private String updateNatsVersion() throws IOException {
         try (final Stream<Path> stream = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99)) {
             final Path configJavaFile = stream
