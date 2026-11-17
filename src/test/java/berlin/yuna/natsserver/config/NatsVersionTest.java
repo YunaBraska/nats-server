@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Optional.ofNullable;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag("UnitTest")
 @DisplayName("Nats Version Generator")
@@ -29,7 +30,8 @@ class NatsVersionTest {
     private static final Pattern VERSION = Pattern.compile("^v?(?<release>(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*))(?<preRelease>-(?:" + IDENTIFIER + ")(?:\\.(?:" + IDENTIFIER + "))*)?$");
 
     @Test
-    void generateVersionsTest() throws IOException {
+    void updateVersionsDuringMaintenance() throws IOException {
+        assumeTrue(Boolean.getBoolean("nats.version.enum.update"));
         writeVersions(readTags(callGET("https://api.github.com/repos/nats-io/nats-server/git/refs/tags/")));
     }
 
