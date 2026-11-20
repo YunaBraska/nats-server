@@ -28,11 +28,9 @@ jobs:
     permissions:
       contents: read
       packages: read
-    uses: YunaBraska/YunaBraska/.github/workflows/wc_java_release.yml@f2c1dd2892f0a2cbba7013fb0be05ba0e7e42bec
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_java_release.yml@469372e592d87a003dbfae15ef8d50194bcea7e5
     with:
-      semver_strategy: snapshot
       upstream_repository: nats-io/nats-server
-      dry_run: ${{ github.event_name == 'workflow_dispatch' && (inputs.maven_central != true || inputs.github_packages != true) }}
 
   central:
     needs:
@@ -43,7 +41,7 @@ jobs:
       contents: read
       deployments: write
       packages: read
-    uses: YunaBraska/YunaBraska/.github/workflows/wc_java_publish_central.yml@f2c1dd2892f0a2cbba7013fb0be05ba0e7e42bec
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_java_publish_central.yml@469372e592d87a003dbfae15ef8d50194bcea7e5
     secrets:
       CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
       CENTRAL_PASS: ${{ secrets.CENTRAL_PASS }}
@@ -59,4 +57,4 @@ jobs:
       contents: read
       deployments: write
       packages: write
-    uses: YunaBraska/YunaBraska/.github/workflows/wc_java_publish_github_packages.yml@f2c1dd2892f0a2cbba7013fb0be05ba0e7e42bec
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_java_publish_github_packages.yml@469372e592d87a003dbfae15ef8d50194bcea7e5
